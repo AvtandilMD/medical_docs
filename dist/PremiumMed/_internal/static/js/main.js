@@ -19,42 +19,50 @@ const loadingOverlay = document.getElementById('loadingOverlay');
 const templatesGrid = document.getElementById('templatesGrid');
 const emptyTemplates = document.getElementById('emptyTemplates');
 
-let currentDocType = 'medical_record';
-let currentAction = null;
+let currentDocType = 'medical_record'; // საწყისად სამედიცინო ჩანაწერი
 
-// ===== Initialize =====
+// ===== Init =====
 document.addEventListener('DOMContentLoaded', () => {
     initNavigation();
     initDocTypeSelection();
     initButtons();
     initModals();
-    initSignatureUploads();
-    loadTemplates();
-    loadSavedSignatures();
     setDefaultDate();
+    initDateTimePickers(); // ← აქ ხდება picker-ების ჩართვა
     initCardNumberSync();
+    initSignatureUploads(); // ← ხელმოწერების ატვირთვაც ჩართულია
+    loadTemplates();
+    loadSavedSignatures(); // ← შენახული ხელმოწერების ჩატვირთვა
 });
 
-// ===== Navigation =====
+// ===== Navigation (Documents / Templates) =====
 function initNavigation() {
     navBtns.forEach(btn => {
         btn.addEventListener('click', () => {
             const tabId = btn.dataset.tab;
             navBtns.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-            tabContents.forEach(content => {
-                content.classList.remove('active');
-                if (content.id === `${tabId}Tab`) {
-                    content.classList.add('active');
-                }
+
+            tabContents.forEach(c => {
+                c.classList.remove('active');
+                if (c.id === `${tabId}Tab`) c.classList.add('active');
             });
+
             if (tabId === 'templates') loadTemplates();
         });
     });
 }
 
-// ===== Document Type Selection =====
+// ===== DocType Selection (Sidebar) =====
 function initDocTypeSelection() {
+    // დარწმუნდით, რომ სწორი ფორმა ჩანს თავიდან
+    if (currentDocType === 'medical_record') {
+        if (medicalRecord) medicalRecord.style.display = 'block';
+        // form100 არ ვმალავთ სრულად, რომ ერთ გვერდზე იყოს (როგორც გინდოდა)
+        // ან თუ გინდა გადართვა იყოს:
+        // if (form100) form100.style.display = 'none';
+    }
+
     docTypeBtns.forEach(btn => {
         btn.addEventListener('click', () => {
             const type = btn.dataset.type;
@@ -63,353 +71,149 @@ function initDocTypeSelection() {
             docTypeBtns.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
 
-            if (type === 'form_100') {
-                // თუ სამედიცინო ჩანაწერში არის შევსებული მონაცემი, გადავიტანოთ ფორმა #100-ში
-                copyMRToForm100IfNeeded();
-                form100.style.display = 'block';
-                medicalRecord.style.display = 'none';
-            } else {
-                form100.style.display = 'none';
-                medicalRecord.style.display = 'block';
+            // სქროლი შესაბამის ფორმასთან
+            if (type === 'form_100' && form100) {
+                form100.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+            if (type === 'medical_record' && medicalRecord) {
+                medicalRecord.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
         });
     });
 }
 
 function setDefaultDate() {
-    const today = new Date().toISOString().split('T')[0];
     const dateInput = document.querySelector('[name="document_date"]');
-    if (dateInput) dateInput.value = today;
-}
-
-// ===== Buttons =====
-function initButtons() {
-    if (saveDocumentBtn) {
-        saveDocumentBtn.addEventListener('click', () => {
-            currentAction = 'save';
-            openFilenameModal();
-        });
-    }
-    if (printDocumentBtn) {
-        printDocumentBtn.addEventListener('click', handlePrint);
-    }
-    if (saveAsTemplateBtn) {
-        saveAsTemplateBtn.addEventListener('click', openTemplateModal);
-    }
-    if (clearFormBtn) {
-        clearFormBtn.addEventListener('click', () => {
-            if (confirm('გსურთ ფორმის გასუფთავება?')) {
-                clearCurrentForm();
-                showToast('გასუფთავდა', 'success');
-            }
-        });
+    if (dateInput && !dateInput.value) {
+        // დღევანდელი თარიღი Y-m-d ფორმატში
+        dateInput.value = new Date().toISOString().split('T')[0];
     }
 }
 
-// ===== Form Data =====
-function getFormData() {
-    const form = currentDocType === 'form_100'
-        ? document.getElementById('form100Form')
-        : document.getElementById('medicalRecordForm');
-
-    if (!form) return { document_type: currentDocType };
-
-    const formData = new FormData(form);
-    const data = { document_type: currentDocType };
-    formData.forEach((value, key) => { data[key] = value; });
-    return data;
-}
-
-// ===== Save =====
-async function handleSave(filename) {
-    showLoading();
-    const data = getFormData();
-    data.filename = filename;
-
-    try {
-        const response = await fetch('/api/save-document', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
-        });
-        const result = await response.json();
-
-        if (result.success) {
-            showToast('შეინახა!', 'success');
-            const link = document.createElement('a');
-            link.href = `/api/download/${result.filename}`;
-            link.download = result.filename;
-            link.click();
-        } else {
-            showToast(`შეცდომა: ${result.error}`, 'error');
-        }
-    } catch (error) {
-        showToast(`შეცდომა: ${error.message}`, 'error');
-    } finally {
-        hideLoading();
-    }
-}
-
-// ===== Print =====
-async function handlePrint() {
-    showLoading();
-    const data = getFormData();
-
-    try {
-        const response = await fetch('/api/print-document', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
-        });
-        const result = await response.json();
-        hideLoading();
-
-        if (result.success) {
-            const printUrl = `/api/print-page/${result.filename}`;
-            showToast('PDF მზადაა!', 'success');
-
-            const win = window.open(printUrl, '_blank');
-            if (!win) {
-                const link = document.createElement('a');
-                link.href = printUrl;
-                link.target = '_blank';
-                link.click();
-            }
-        } else {
-            showToast(`შეცდომა: ${result.error}`, 'error');
-        }
-    } catch (error) {
-        hideLoading();
-        showToast(`შეცდომა: ${error.message}`, 'error');
-    }
-}
-
-// ===== Templates =====
-async function loadTemplates() {
-    try {
-        const response = await fetch('/api/templates');
-        const result = await response.json();
-        if (result.success) renderTemplates(result.templates);
-    } catch (error) {
-        console.error('Templates error:', error);
-    }
-}
-
-function renderTemplates(templates) {
-    if (!templatesGrid) return;
-    if (templates.length === 0) {
-        templatesGrid.innerHTML = '';
-        if (emptyTemplates) emptyTemplates.style.display = 'block';
+// ===== Flatpickr (კალენდარი) =====
+function initDateTimePickers() {
+    if (typeof flatpickr === 'undefined') {
+        console.warn('flatpickr not loaded');
         return;
     }
-    if (emptyTemplates) emptyTemplates.style.display = 'none';
 
-    templatesGrid.innerHTML = templates.map(t => `
-        <div class="template-card">
-            <div class="template-card-header">
-                <div class="template-icon">
-                    <i class="fas ${t.type === 'form_100' ? 'fa-file-alt' : 'fa-notes-medical'}"></i>
-                </div>
-                <div class="template-actions">
-                    <button onclick="useTemplate('${t.id}')"><i class="fas fa-check"></i></button>
-                    <button class="delete" onclick="deleteTemplate('${t.id}')"><i class="fas fa-trash"></i></button>
-                </div>
-            </div>
-            <h3>${t.name}</h3>
-            <span class="template-type">${t.type === 'form_100' ? 'ფორმა №100' : 'სამედიცინო ჩანაწერი'}</span>
-        </div>
-    `).join('');
-}
-
-async function saveTemplate(name) {
-    const data = getFormData();
-    data.template_name = name;
-
-    try {
-        const response = await fetch('/api/templates', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
-        });
-        const result = await response.json();
-        if (result.success) {
-            showToast('შაბლონი შეინახა!', 'success');
-            loadTemplates();
-        }
-    } catch (error) {
-        showToast(`შეცდომა: ${error.message}`, 'error');
+    // ქართული ენა
+    if (flatpickr.l10ns && flatpickr.l10ns.ka) {
+        flatpickr.localize(flatpickr.l10ns.ka);
     }
-}
 
-async function useTemplate(templateId) {
-    try {
-        const response = await fetch('/api/templates');
-        const result = await response.json();
-        if (result.success) {
-            const template = result.templates.find(t => t.id === templateId);
-            if (template) {
-                document.querySelector('[data-tab="documents"]').click();
-                document.querySelector(`[data-type="${template.data.document_type}"]`).click();
-                setTimeout(() => {
-                    fillFormWithData(template.data);
-                    showToast('შაბლონი ჩაიტვირთა!', 'success');
-                }, 100);
-            }
-        }
-    } catch (error) {
-        showToast(`შეცდომა: ${error.message}`, 'error');
-    }
-}
+    // 1. თარიღი + დრო (24-საათიანი)
+    // კლასი: .datetime-24
+    flatpickr('.datetime-24', {
+        enableTime: true,
+        time_24hr: true,
+        dateFormat: 'Y-m-d H:i',
+        altInput: true,
+        altFormat: 'd.m.Y H:i',
+        allowInput: true
+    });
 
-async function deleteTemplate(templateId) {
-    if (!confirm('წავშალოთ შაბლონი?')) return;
-    try {
-        await fetch(`/api/templates/${templateId}`, { method: 'DELETE' });
-        showToast('წაიშალა!', 'success');
-        loadTemplates();
-    } catch (error) {
-        showToast(`შეცდომა: ${error.message}`, 'error');
-    }
-}
-
-function fillFormWithData(data) {
-    const form = data.document_type === 'form_100'
-        ? document.getElementById('form100Form')
-        : document.getElementById('medicalRecordForm');
-    if (!form) return;
-    Object.keys(data).forEach(key => {
-        const input = form.querySelector(`[name="${key}"]`);
-        if (input) input.value = data[key];
+    // 2. მხოლოდ თარიღი (საათის გარეშე)
+    // კლასი: .date-only
+    flatpickr('.date-only', {
+        enableTime: false,
+        dateFormat: 'Y-m-d',
+        altInput: true,
+        altFormat: 'd.m.Y',
+        allowInput: true
     });
 }
 
-function clearCurrentForm() {
-    const form = currentDocType === 'form_100'
-        ? document.getElementById('form100Form')
-        : document.getElementById('medicalRecordForm');
-    if (form) form.reset();
-    setDefaultDate();
-}
-// ===== Medical Record card_number -> Form 100 registration_number =====
+// ===== Card Number -> Registration Number Sync =====
 function initCardNumberSync() {
-    // ვპოულობთ სამედიცინო ჩანაწერის ბარათის ნომრის ველს
     const mrCardNumber = document.querySelector('#medicalRecordForm [name="card_number"]');
-    // ვპოულობთ ფორმა №100-ის რეგისტრაციის ველს
-    const form100Reg = document.querySelector('#form100Form [name="registration_number"]');
+    const form100Reg   = document.querySelector('#form100Form [name="registration_number"]');
 
-    if (!mrCardNumber || !form100Reg) {
-        // თუ რომელიმე არ არსებობს, არაფერს ვაკეთებთ
-        return;
-    }
+    if (!mrCardNumber || !form100Reg) return;
 
-    // თუ მომხმარებელი ხელით შეცვლის რეგისტრაციის ნომერს,
-    // აღარ გადავაწეროთ ავტომატურად ბარათის ნომრის ცვლილებით
     form100Reg.addEventListener('input', () => {
         form100Reg.dataset.manualEdited = 'true';
     });
 
-    // როდესაც ბარათის ნომერი იცვლება
     mrCardNumber.addEventListener('input', () => {
         const val = mrCardNumber.value;
-
-        // თუ რეგისტრაციის № ცარიელია ან ადრე ავტომატურად იყო შევსებული,
-        // ვანახლებთ. თუ ხელით შეცვალეს, აღარ ვეხებით.
-        if (!form100Reg.value || form100Reg.dataset.autoFilled === 'true' && form100Reg.dataset.manualEdited !== 'true') {
+        if (!form100Reg.value || (form100Reg.dataset.autoFilled === 'true' && form100Reg.dataset.manualEdited !== 'true')) {
             form100Reg.value = val;
             form100Reg.dataset.autoFilled = 'true';
         }
     });
 }
-// ===== Modals =====
-function initModals() {
-    document.getElementById('closeModal')?.addEventListener('click', closeTemplateModal);
-    document.getElementById('cancelTemplate')?.addEventListener('click', closeTemplateModal);
-    document.getElementById('confirmSaveTemplate')?.addEventListener('click', () => {
-        const name = document.getElementById('templateName')?.value.trim();
-        if (!name) { showToast('შეიყვანეთ სახელი', 'error'); return; }
-        saveTemplate(name);
-        closeTemplateModal();
-    });
 
-    document.getElementById('closeFilenameModal')?.addEventListener('click', closeFilenameModal);
-    document.getElementById('cancelFilename')?.addEventListener('click', closeFilenameModal);
-    document.getElementById('confirmFilename')?.addEventListener('click', () => {
-        const filename = document.getElementById('docFilename')?.value.trim();
-        if (!filename) { showToast('შეიყვანეთ სახელი', 'error'); return; }
-        if (currentAction === 'save') handleSave(filename);
-        closeFilenameModal();
-    });
-
-    templateModal?.addEventListener('click', e => { if (e.target === templateModal) closeTemplateModal(); });
-    filenameModal?.addEventListener('click', e => { if (e.target === filenameModal) closeFilenameModal(); });
-}
-
-function openTemplateModal() {
-    templateModal?.classList.add('active');
-    document.getElementById('templateName').value = '';
-}
-
-function closeTemplateModal() {
-    templateModal?.classList.remove('active');
-}
-
-function openFilenameModal() {
-    const patientName = currentDocType === 'form_100'
-        ? document.getElementById('patient_name')?.value
-        : document.getElementById('mr_patient_name')?.value;
-    const today = new Date().toISOString().split('T')[0];
-    document.getElementById('docFilename').value = patientName
-        ? `${patientName.replace(/\s+/g, '_')}_${today}`
-        : `document_${today}`;
-    filenameModal?.classList.add('active');
-}
-
-function closeFilenameModal() {
-    filenameModal?.classList.remove('active');
-}
-
-// ===== Signatures =====
+// ===== Signatures (ატვირთვა / გასუფთავება) =====
 function initSignatureUploads() {
     // ფორმა #100
-    document.getElementById('doctorSigInput')?.addEventListener('change', e => handleSigUpload(e, 'doctor'));
-    document.getElementById('stampInput')?.addEventListener('change', e => handleSigUpload(e, 'stamp'));
-    document.getElementById('headSigInput')?.addEventListener('change', e => handleSigUpload(e, 'head'));
+    const docInput = document.getElementById('doctorSigInput');
+    if (docInput) docInput.addEventListener('change', e => handleSigUpload(e, 'doctor'));
+
+    const stampInput = document.getElementById('stampInput');
+    if (stampInput) stampInput.addEventListener('change', e => handleSigUpload(e, 'stamp'));
+
+    const headInput = document.getElementById('headSigInput');
+    if (headInput) headInput.addEventListener('change', e => handleSigUpload(e, 'head'));
 
     // სამედიცინო ჩანაწერი
-    document.getElementById('mrDoctorSigInput')?.addEventListener('change', e => handleSigUpload(e, 'mrDoctor'));
+    const mrDocInput = document.getElementById('mrDoctorSigInput');
+    if (mrDocInput) mrDocInput.addEventListener('change', e => handleSigUpload(e, 'mrDoctor'));
 }
 
 function handleSigUpload(event, type) {
     const file = event.target.files[0];
     if (!file) return;
-    if (file.size > 2 * 1024 * 1024) { showToast('ფაილი ძალიან დიდია', 'error'); return; }
+    if (file.size > 2 * 1024 * 1024) {
+        showToast('ფაილი ძალიან დიდია (მაქს 2MB)', 'error');
+        return;
+    }
 
     const reader = new FileReader();
     reader.onload = function(e) {
         const base64 = e.target.result;
 
-        const previewMap = {
-            'doctor': 'doctorSigPreview',
-            'stamp': 'stampPreview',
-            'head': 'headSigPreview',
-            'mrDoctor': 'mrDoctorSigPreview'
-        };
-        const dataMap = {
-            'doctor': 'doctorSigData',
-            'stamp': 'stampData',
-            'head': 'headSigData',
-            'mrDoctor': 'mrDoctorSigData'
+        // ელემენტების ID-ები
+        const map = {
+            'doctor': { preview: 'doctorSigPreview', data: 'doctorSigData' },
+            'stamp': { preview: 'stampPreview', data: 'stampData' },
+            'head': { preview: 'headSigPreview', data: 'headSigData' },
+            'mrDoctor': { preview: 'mrDoctorSigPreview', data: 'mrDoctorSigData' }
         };
 
-        const preview = document.getElementById(previewMap[type]);
-        if (preview) preview.innerHTML = `<img src="${base64}" alt="sig">`;
+        const ids = map[type];
+        if (ids) {
+            const preview = document.getElementById(ids.preview);
+            if (preview) preview.innerHTML = `<img src="${base64}" alt="sig" style="max-width:100%; max-height:100%;">`;
 
-        const dataInput = document.getElementById(dataMap[type]);
-        if (dataInput) dataInput.value = base64;
+            const dataInput = document.getElementById(ids.data);
+            if (dataInput) dataInput.value = base64;
 
-        showToast('ატვირთულია!', 'success');
+            // სერვერზე შენახვა (სურვილისამებრ, რომ შემდეგ ჯერზეც დარჩეს)
+            uploadSignatureToServer(file, type);
+        }
+        showToast('ხელმოწერა ატვირთულია!', 'success');
     };
     reader.readAsDataURL(file);
+}
+
+async function uploadSignatureToServer(file, type) {
+    const formData = new FormData();
+    formData.append('file', file);
+    // ტიპების გაერთიანება სერვერისთვის (mrDoctor -> doctor)
+    let serverType = type;
+    if (type === 'mrDoctor') serverType = 'doctor';
+
+    formData.append('type', serverType);
+
+    try {
+        await fetch('/api/upload-signature', {
+            method: 'POST',
+            body: formData
+        });
+    } catch (e) {
+        console.error('Signature upload error:', e);
+    }
 }
 
 function clearSignature(type) {
@@ -439,23 +243,353 @@ async function loadSavedSignatures() {
         const result = await response.json();
         if (result.success && result.signatures) {
             const s = result.signatures;
-            if (s.doctor) {
-                document.getElementById('doctorSigPreview').innerHTML = `<img src="${s.doctor}">`;
-                document.getElementById('doctorSigData').value = s.doctor;
-            }
-            if (s.stamp) {
-                document.getElementById('stampPreview').innerHTML = `<img src="${s.stamp}">`;
-                document.getElementById('stampData').value = s.stamp;
-            }
-            if (s.head) {
-                document.getElementById('headSigPreview').innerHTML = `<img src="${s.head}">`;
-                document.getElementById('headSigData').value = s.head;
-            }
+            // Form 100
+            if (s.doctor) setSig('doctor', s.doctor);
+            if (s.stamp) setSig('stamp', s.stamp);
+            if (s.head) setSig('head', s.head);
+            // MR
+            if (s.doctor) setSig('mrDoctor', s.doctor);
         }
     } catch (e) { console.error(e); }
 }
 
-// ===== UI =====
+function setSig(type, base64) {
+    const map = {
+        'doctor': { preview: 'doctorSigPreview', data: 'doctorSigData' },
+        'stamp': { preview: 'stampPreview', data: 'stampData' },
+        'head': { preview: 'headSigPreview', data: 'headSigData' },
+        'mrDoctor': { preview: 'mrDoctorSigPreview', data: 'mrDoctorSigData' }
+    };
+    const ids = map[type];
+    if (ids) {
+        const p = document.getElementById(ids.preview);
+        if (p) p.innerHTML = `<img src="${base64}" style="max-width:100%; max-height:100%;">`;
+        const d = document.getElementById(ids.data);
+        if (d) d.value = base64;
+    }
+}
+
+// ===== Buttons =====
+function initButtons() {
+    if (saveDocumentBtn) {
+        saveDocumentBtn.addEventListener('click', () => {
+            openFilenameModal();
+        });
+    }
+    if (printDocumentBtn) {
+        printDocumentBtn.addEventListener('click', handlePrint);
+    }
+    if (saveAsTemplateBtn) {
+        saveAsTemplateBtn.addEventListener('click', openTemplateModal);
+    }
+    if (clearFormBtn) {
+        clearFormBtn.addEventListener('click', () => {
+            if (confirm('ნამდვილად გსურთ ფორმის გასუფთავება?')) {
+                clearCurrentForm();
+                showToast('ფორმა გასუფთავდა', 'success');
+            }
+        });
+    }
+}
+
+// ===== Form Data =====
+function getFormData() {
+    const form = currentDocType === 'form_100'
+        ? document.getElementById('form100Form')
+        : document.getElementById('medicalRecordForm');
+
+    const data = { document_type: currentDocType };
+    if (!form) return data;
+
+    const fd = new FormData(form);
+    fd.forEach((val, key) => { data[key] = val; });
+    return data;
+}
+
+// ===== Save =====
+async function handleSave(filename) {
+    showLoading();
+    const data = getFormData();
+    data.filename = filename;
+
+    try {
+        const resp = await fetch('/api/save-document', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        const result = await resp.json();
+        hideLoading();
+
+        if (!result.success) {
+            showToast(`შეცდომა: ${result.error}`, 'error');
+            return;
+        }
+
+        showToast('დოკუმენტი შენახულია!', 'success');
+        const link = document.createElement('a');
+        link.href = `/api/download/${result.filename}`;
+        link.download = result.filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+    } catch (e) {
+        hideLoading();
+        showToast(`შეცდომა: ${e.message}`, 'error');
+    }
+}
+
+// ===== Print =====
+async function handlePrint() {
+    showLoading();
+    const data = getFormData();
+
+    try {
+        const resp = await fetch('/api/print-document', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        const result = await resp.json();
+        hideLoading();
+
+        if (!result.success) {
+            showToast(`შეცდომა: ${result.error}`, 'error');
+            return;
+        }
+
+        if (result.is_pdf) {
+            const printUrl = `/api/print-page/${result.filename}`;
+            showToast('PDF მზადაა ბეჭდვისთვის', 'success');
+
+            const win = window.open(
+                printUrl,
+                'PrintWindow_' + Date.now(),
+                'width=900,height=700,menubar=no,toolbar=no,location=no,status=no,resizable=yes,scrollbars=yes'
+            );
+            if (!win) {
+                const link = document.createElement('a');
+                link.href = printUrl;
+                link.target = '_blank';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+        } else {
+            showToast('PDF ვერ შეიქმნა, იტვირთება DOCX.', 'warning');
+            const link = document.createElement('a');
+            link.href = `/api/download/${result.filename}`;
+            link.download = result.filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+    } catch (e) {
+        hideLoading();
+        showToast(`შეცდომა: ${e.message}`, 'error');
+    }
+}
+
+// ===== Templates =====
+async function loadTemplates() {
+    try {
+        const resp = await fetch('/api/templates');
+        const result = await resp.json();
+        if (result.success) renderTemplates(result.templates);
+    } catch (e) {
+        console.error('Templates error', e);
+    }
+}
+
+function renderTemplates(templates) {
+    if (!templatesGrid) return;
+
+    if (!templates || templates.length === 0) {
+        templatesGrid.innerHTML = '';
+        if (emptyTemplates) emptyTemplates.style.display = 'block';
+        return;
+    }
+    if (emptyTemplates) emptyTemplates.style.display = 'none';
+
+    templatesGrid.innerHTML = templates.map(t => `
+        <div class="template-card" data-template-id="${t.id}">
+            <div class="template-card-header">
+                <div class="template-icon">
+                    <i class="fas ${t.data.document_type === 'form_100' ? 'fa-file-alt' : 'fa-notes-medical'}"></i>
+                </div>
+                <div class="template-actions">
+                    <button onclick="useTemplate('${t.id}')" title="გამოყენება">
+                        <i class="fas fa-check"></i>
+                    </button>
+                    <button class="delete" onclick="deleteTemplate('${t.id}')" title="წაშლა">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+            <h3>${t.name}</h3>
+            <span class="template-type">
+                ${t.data.document_type === 'form_100' ? 'ფორმა №100' : 'სამედიცინო ჩანაწერი'}
+            </span>
+        </div>
+    `).join('');
+}
+
+async function saveTemplate(name) {
+    const data = getFormData();
+    data.template_name = name;
+
+    try {
+        const resp = await fetch('/api/templates', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        const result = await resp.json();
+        if (result.success) {
+            showToast('შაბლონი შენახულია!', 'success');
+            loadTemplates();
+        } else {
+            showToast(`შეცდომა: ${result.error}`, 'error');
+        }
+    } catch (e) {
+        showToast(`შეცდომა: ${e.message}`, 'error');
+    }
+}
+
+async function useTemplate(templateId) {
+    try {
+        const resp = await fetch('/api/templates');
+        const result = await resp.json();
+        if (!result.success) return;
+
+        const t = result.templates.find(x => x.id === templateId);
+        if (!t) return;
+
+        const docType = t.data.document_type || 'form_100';
+        currentDocType = docType;
+
+        const btn = document.querySelector(`.doc-type-btn[data-type="${docType}"]`);
+        if (btn) btn.click();
+
+        // მცირე შეყოვნება, რომ სქროლი და ტაბი შეიცვალოს
+        setTimeout(() => {
+            const form = docType === 'form_100'
+                ? document.getElementById('form100Form')
+                : document.getElementById('medicalRecordForm');
+            if (!form) return;
+
+            Object.keys(t.data).forEach(key => {
+                if (['document_type', 'template_name', 'created'].includes(key)) return;
+                const el = form.querySelector(`[name="${key}"]`);
+                // Flatpickr-ის შემთხვევაში, setDate მეთოდია სასურველი, მაგრამ value-ც მუშაობს altInput-თან
+                if (el) {
+                    if (el._flatpickr) {
+                        el._flatpickr.setDate(t.data[key]);
+                    } else {
+                        el.value = t.data[key];
+                    }
+                }
+            });
+            showToast('შაბლონი ჩაიტვირთა!', 'success');
+        }, 100);
+
+    } catch (e) {
+        showToast(`შეცდომა: ${e.message}`, 'error');
+    }
+}
+
+async function deleteTemplate(templateId) {
+    if (!confirm('ნამდვილად გსურთ შაბლონის წაშლა?')) return;
+    try {
+        const resp = await fetch(`/api/templates/${templateId}`, { method: 'DELETE' });
+        const result = await resp.json();
+        if (result.success) {
+            showToast('შაბლონი წაიშალა!', 'success');
+            loadTemplates();
+        } else {
+            showToast(`შეცდომა: ${result.error}`, 'error');
+        }
+    } catch (e) {
+        showToast(`შეცდომა: ${e.message}`, 'error');
+    }
+}
+
+// ===== Modals =====
+function initModals() {
+    document.getElementById('closeModal')?.addEventListener('click', closeTemplateModal);
+    document.getElementById('cancelTemplate')?.addEventListener('click', closeTemplateModal);
+    document.getElementById('confirmSaveTemplate')?.addEventListener('click', () => {
+        const name = document.getElementById('templateName')?.value.trim();
+        if (!name) {
+            showToast('შეიყვანეთ შაბლონის სახელი', 'error');
+            return;
+        }
+        saveTemplate(name);
+        closeTemplateModal();
+    });
+
+    document.getElementById('closeFilenameModal')?.addEventListener('click', closeFilenameModal);
+    document.getElementById('cancelFilename')?.addEventListener('click', closeFilenameModal);
+    document.getElementById('confirmFilename')?.addEventListener('click', () => {
+        const filename = document.getElementById('docFilename')?.value.trim();
+        if (!filename) {
+            showToast('შეიყვანეთ ფაილის სახელი', 'error');
+            return;
+        }
+        handleSave(filename);
+        closeFilenameModal();
+    });
+
+    templateModal?.addEventListener('click', e => {
+        if (e.target === templateModal) closeTemplateModal();
+    });
+    filenameModal?.addEventListener('click', e => {
+        if (e.target === filenameModal) closeFilenameModal();
+    });
+}
+
+function openTemplateModal() {
+    if (templateModal) {
+        templateModal.classList.add('active');
+        const input = document.getElementById('templateName');
+        if (input) { input.value = ''; input.focus(); }
+    }
+}
+
+function closeTemplateModal() {
+    if (templateModal) templateModal.classList.remove('active');
+}
+
+function openFilenameModal() {
+    const patientName = currentDocType === 'form_100'
+        ? document.getElementById('patient_name')?.value
+        : document.getElementById('mr_patient_name')?.value;
+
+    const today = new Date().toISOString().split('T')[0];
+    const suggested = patientName
+        ? `${patientName.replace(/\s+/g, '_')}_${today}`
+        : `document_${today}`;
+
+    const input = document.getElementById('docFilename');
+    if (input) input.value = suggested;
+
+    if (filenameModal) filenameModal.classList.add('active');
+}
+
+function closeFilenameModal() {
+    if (filenameModal) filenameModal.classList.remove('active');
+}
+
+// ===== Utils =====
+function clearCurrentForm() {
+    const form = currentDocType === 'form_100'
+        ? document.getElementById('form100Form')
+        : document.getElementById('medicalRecordForm');
+    if (form) form.reset();
+}
+
 function showToast(message, type = 'success') {
     if (!toast || !toastMessage) return;
     toast.className = `toast ${type}`;
@@ -464,84 +598,15 @@ function showToast(message, type = 'success') {
     setTimeout(() => toast.classList.remove('show'), 3000);
 }
 
-function showLoading() { loadingOverlay?.classList.add('active'); }
-function hideLoading() { loadingOverlay?.classList.remove('active'); }
+function showLoading() {
+    if (loadingOverlay) loadingOverlay.classList.add('active');
+}
 
-// ===== Global =====
+function hideLoading() {
+    if (loadingOverlay) loadingOverlay.classList.remove('active');
+}
+
+// ===== Global for templates =====
 window.useTemplate = useTemplate;
 window.deleteTemplate = deleteTemplate;
 window.clearSignature = clearSignature;
-
-// ===== Medical Record -> Form 100 Auto-Copy =====
-function copyMRToForm100IfNeeded() {
-    const mrForm = document.getElementById('medicalRecordForm');
-    const f100Form = document.getElementById('form100Form');
-    if (!mrForm || !f100Form) return;
-
-    const mrPatient = mrForm.querySelector('[name="patient_name"]');
-    if (!mrPatient || !mrPatient.value.trim()) {
-        // თუ პაციენტის სახელი არ არის შევსებული, ვთვლით, რომ ფორმა ცარიელია
-        return;
-    }
-
-    copyMRToForm100();
-    showToast('მონაცემები სამედიცინო ჩანაწერიდან ფორმა №100-ში გადმოწერილია', 'success');
-}
-
-function copyMRToForm100() {
-    const mr = document.getElementById('medicalRecordForm');
-    const f100 = document.getElementById('form100Form');
-    if (!mr || !f100) return;
-
-    // პაციენტის სახელი
-    const mrPatient = mr.querySelector('[name="patient_name"]')?.value || '';
-    if (mrPatient && f100.querySelector('[name="patient_name"]')) {
-        f100.querySelector('[name="patient_name"]').value = mrPatient;
-    }
-
-    // ანამნეზი (თუ ორივე გაქვს, MR-ის ანამნეზი გადადის ფორმა100-ის ანამნეზში)
-    const mrComplaints = mr.querySelector('[name="complaints"]')?.value || '';
-    const mrAnam = mr.querySelector('[name="anamnesis"]')?.value || '';
-    const anamTarget = f100.querySelector('[name="anamnesis"]');
-    if (anamTarget) {
-        if (mrAnam) anamTarget.value = mrAnam;
-        else if (mrComplaints) anamTarget.value = mrComplaints;
-    }
-
-    // დიაგნოზი (ICD + აღწერა ან წინასწარი დიაგნოზი)
-    const icd = mr.querySelector('[name="icd_code"]')?.value || '';
-    const diagDesc = mr.querySelector('[name="diagnosis_description"]')?.value || '';
-    const prelimDiag = mr.querySelector('[name="preliminary_diagnosis"]')?.value || '';
-    const mainDiagTarget = f100.querySelector('[name="main_diagnosis"]');
-    if (mainDiagTarget) {
-        let text = '';
-        if (diagDesc) text += diagDesc;
-        if (icd) text += (text ? ' ' : '') + icd;
-        if (!text && prelimDiag) text = prelimDiag;
-        mainDiagTarget.value = text;
-    }
-
-    // ვიტალები -> მიღების ვიტალები ფორმა100-ში
-    const t = mr.querySelector('[name="temperature"]')?.value || '';
-    const bp = mr.querySelector('[name="blood_pressure"]')?.value || '';
-    const hr = mr.querySelector('[name="heart_rate"]')?.value || '';
-    const rr = mr.querySelector('[name="respiratory_rate"]')?.value || '';
-    const spo2 = mr.querySelector('[name="spo2"]')?.value || '';
-
-    if (f100.querySelector('[name="admission_temp"]') && t) f100.querySelector('[name="admission_temp"]').value = t;
-    if (f100.querySelector('[name="admission_bp"]') && bp) f100.querySelector('[name="admission_bp"]').value = bp;
-    if (f100.querySelector('[name="admission_hr"]') && hr) f100.querySelector('[name="admission_hr"]').value = hr;
-    if (f100.querySelector('[name="admission_rr"]') && rr) f100.querySelector('[name="admission_rr"]').value = rr;
-    if (f100.querySelector('[name="admission_spo2"]') && spo2) f100.querySelector('[name="admission_spo2"]').value = spo2;
-
-    // ზოგადი მდგომარეობა -> form100-ის course_type ან discharge_condition (სურვილისამებრ)
-    // მაგალითად, თუ MR-ში general_condition არის "საშუალო სიმძიმის", form100-ში შეგვიძლია ჩავსვათ discharge_condition-ში
-    const mrGeneral = mr.querySelector('[name="general_condition"]')?.value || '';
-    const dischargeCondTarget = f100.querySelector('[name="discharge_condition"]');
-    if (mrGeneral && dischargeCondTarget && !dischargeCondTarget.value) {
-        dischargeCondTarget.value = mrGeneral;
-    }
-}
-
-// გლობალური რომ სხვა ადგილებიდანაც გამოიძახო (თუ დაგჭირდება)
-window.copyMRToForm100 = copyMRToForm100;

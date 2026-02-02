@@ -43,7 +43,7 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=['C:\\Users\\WORK-PC\\Desktop\\medical_docs - Copy\\icon.ico'],
+    icon=['C:\\Users\\WORK-PC\\Desktop\\medical_docs\\icon.ico'],
 )
 coll = COLLECT(
     exe,

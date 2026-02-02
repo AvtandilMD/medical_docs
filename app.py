@@ -226,10 +226,10 @@ def create_form_100_document(data):
     course_text = f"""ტიპი: {data.get('course_type', '')}
 
 მიღებისას: {data.get('admission_status', '')}
-ვიტალები: T-{data.get('admission_temp', '')}°C | HR-{data.get('admission_hr', '')} | BP-{data.get('admission_bp', '')} | RR-{data.get('admission_rr', '')} | SpO2-{data.get('admission_spo2', '')}
+ვიტალური მაჩვენებლები: T-{data.get('admission_temp', '')}°C | HR-{data.get('admission_hr', '')} | BP-{data.get('admission_bp', '')} | RR-{data.get('admission_rr', '')} | SpO2-{data.get('admission_spo2', '')}
 
 გაწერისას: {data.get('discharge_status', '')}
-ვიტალები: T-{data.get('discharge_temp', '')}°C | HR-{data.get('discharge_hr', '')} | BP-{data.get('discharge_bp', '')} | RR-{data.get('discharge_rr', '')} | SpO2-{data.get('discharge_spo2', '')}"""
+ვიტალური მაჩვენებლები: T-{data.get('discharge_temp', '')}°C | HR-{data.get('discharge_hr', '')} | BP-{data.get('discharge_bp', '')} | RR-{data.get('discharge_rr', '')} | SpO2-{data.get('discharge_spo2', '')}"""
 
     t9.rows[1].cells[0].text = course_text
 

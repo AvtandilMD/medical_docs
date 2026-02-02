@@ -1,5 +1,4 @@
-('C:\\Users\\WORK-PC\\Desktop\\medical_docs - '
- 'Copy\\build\\PremiumMed\\PremiumMed.pkg',
+('C:\\Users\\WORK-PC\\Desktop\\medical_docs\\build\\PremiumMed\\PremiumMed.pkg',
  {'BINARY': True,
   'DATA': True,
   'EXECUTABLE': True,
@@ -11,28 +10,22 @@
   'SYMLINK': False},
  [('pyi-contents-directory _internal', '', 'OPTION'),
   ('PYZ-00.pyz',
-   'C:\\Users\\WORK-PC\\Desktop\\medical_docs - '
-   'Copy\\build\\PremiumMed\\PYZ-00.pyz',
+   'C:\\Users\\WORK-PC\\Desktop\\medical_docs\\build\\PremiumMed\\PYZ-00.pyz',
    'PYZ'),
   ('struct',
-   'C:\\Users\\WORK-PC\\Desktop\\medical_docs - '
-   'Copy\\build\\PremiumMed\\localpycs\\struct.pyc',
+   'C:\\Users\\WORK-PC\\Desktop\\medical_docs\\build\\PremiumMed\\localpycs\\struct.pyc',
    'PYMODULE'),
   ('pyimod01_archive',
-   'C:\\Users\\WORK-PC\\Desktop\\medical_docs - '
-   'Copy\\build\\PremiumMed\\localpycs\\pyimod01_archive.pyc',
+   'C:\\Users\\WORK-PC\\Desktop\\medical_docs\\build\\PremiumMed\\localpycs\\pyimod01_archive.pyc',
    'PYMODULE'),
   ('pyimod02_importers',
-   'C:\\Users\\WORK-PC\\Desktop\\medical_docs - '
-   'Copy\\build\\PremiumMed\\localpycs\\pyimod02_importers.pyc',
+   'C:\\Users\\WORK-PC\\Desktop\\medical_docs\\build\\PremiumMed\\localpycs\\pyimod02_importers.pyc',
    'PYMODULE'),
   ('pyimod03_ctypes',
-   'C:\\Users\\WORK-PC\\Desktop\\medical_docs - '
-   'Copy\\build\\PremiumMed\\localpycs\\pyimod03_ctypes.pyc',
+   'C:\\Users\\WORK-PC\\Desktop\\medical_docs\\build\\PremiumMed\\localpycs\\pyimod03_ctypes.pyc',
    'PYMODULE'),
   ('pyimod04_pywin32',
-   'C:\\Users\\WORK-PC\\Desktop\\medical_docs - '
-   'Copy\\build\\PremiumMed\\localpycs\\pyimod04_pywin32.pyc',
+   'C:\\Users\\WORK-PC\\Desktop\\medical_docs\\build\\PremiumMed\\localpycs\\pyimod04_pywin32.pyc',
    'PYMODULE'),
   ('pyiboot01_bootstrap',
    'C:\\Users\\WORK-PC\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\PyInstaller\\loader\\pyiboot01_bootstrap.py',
@@ -55,9 +48,7 @@
   ('pyi_rth_pythoncom',
    'C:\\Users\\WORK-PC\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\rthooks\\pyi_rth_pythoncom.py',
    'PYSOURCE'),
-  ('app',
-   'C:\\Users\\WORK-PC\\Desktop\\medical_docs - Copy\\app.py',
-   'PYSOURCE')],
+  ('app', 'C:\\Users\\WORK-PC\\Desktop\\medical_docs\\app.py', 'PYSOURCE')],
  'python314.dll',
  True,
  False,
