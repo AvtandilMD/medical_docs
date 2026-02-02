@@ -678,6 +678,24 @@ async function performSearch(query) {
         resultsBox.innerHTML = '<div style="padding:10px; text-align:center; color:red;">შეცდომა</div>';
     }
 }
+function copyToEHR() {
+    const data = getFormData(); // ეს ფუნქცია უკვე გაქვთ, იღებს ყველა მონაცემს
+
+    // ვირჩევთ მხოლოდ იმას, რაც გვჭირდება
+    const exportData = {
+        name: data.patient_name || "",
+        personal_id: data.personal_id || "",
+        diagnosis: data.main_diagnosis || "",
+        anamnesis: data.anamnesis || ""
+    };
+
+    // ვაკოპირებთ ბუფერში
+    navigator.clipboard.writeText(JSON.stringify(exportData)).then(() => {
+        showToast("მონაცემები დაკოპირდა! ახლა გახსენით EHR და დააჭირეთ 'შევსებას'", "success");
+        // სურვილისამებრ, ავტომატურად გახსნას საიტი:
+        window.open('https://ehr.moh.gov.ge/index.php', '_blank');
+    });
+}
 
 // ===== Global for templates =====
 window.useTemplate = useTemplate;
