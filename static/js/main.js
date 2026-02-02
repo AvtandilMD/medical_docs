@@ -26,6 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initNavigation();
     initDocTypeSelection();
     initButtons();
+    initSearch();
     initModals();
     setDefaultDate();
     initDateTimePickers(); // ← აქ ხდება picker-ების ჩართვა
@@ -604,6 +605,78 @@ function showLoading() {
 
 function hideLoading() {
     if (loadingOverlay) loadingOverlay.classList.remove('active');
+}
+
+// ===== Search System =====
+function initSearch() {
+    const searchInput = document.getElementById('patientSearch');
+    const resultsBox = document.getElementById('searchResults');
+    let debounceTimer;
+
+    if (!searchInput || !resultsBox) return;
+
+    searchInput.addEventListener('input', (e) => {
+        clearTimeout(debounceTimer);
+        const query = e.target.value.trim();
+
+        if (query.length < 2) {
+            resultsBox.style.display = 'none';
+            return;
+        }
+
+        debounceTimer = setTimeout(() => performSearch(query), 300);
+    });
+
+    // დახურვა სხვაგან დაწკაპუნებისას
+    document.addEventListener('click', (e) => {
+        if (!searchInput.contains(e.target) && !resultsBox.contains(e.target)) {
+            resultsBox.style.display = 'none';
+        }
+    });
+}
+
+async function performSearch(query) {
+    const resultsBox = document.getElementById('searchResults');
+    resultsBox.innerHTML = '<div style="padding:10px; text-align:center; color:#666;">ეძებს...</div>';
+    resultsBox.style.display = 'block';
+
+    try {
+        const resp = await fetch(`/api/search-patients?q=${encodeURIComponent(query)}`);
+        const data = await resp.json();
+
+        if (!data.success || data.results.length === 0) {
+            resultsBox.innerHTML = '<div style="padding:10px; text-align:center; color:#999;">ვერ მოიძებნა</div>';
+            return;
+        }
+
+        resultsBox.innerHTML = data.results.map(item => {
+            if (item.type === 'document') {
+                return `
+                    <div class="search-item" onclick="window.open('${item.path}', '_blank')">
+                        <h4><i class="fas fa-file-word"></i> ${item.name}</h4>
+                        <p>
+                            <span class="search-tag tag-doc">DOCX</span>
+                            <span>${item.date}</span>
+                        </p>
+                    </div>
+                `;
+            } else {
+                return `
+                    <div class="search-item" onclick="useTemplate('${item.id}')">
+                        <h4><i class="fas fa-user-injured"></i> ${item.patient}</h4>
+                        <p>
+                            <span class="search-tag tag-tmpl">შაბლონი</span>
+                            <span>${item.date}</span>
+                        </p>
+                    </div>
+                `;
+            }
+        }).join('');
+
+    } catch (e) {
+        console.error(e);
+        resultsBox.innerHTML = '<div style="padding:10px; text-align:center; color:red;">შეცდომა</div>';
+    }
 }
 
 // ===== Global for templates =====

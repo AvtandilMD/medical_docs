@@ -5,23 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>სამედიცინო დოკუმენტაცია</title>
 
-    <!-- ძირითადი სტილები -->
+    <!-- CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-
-    <!-- ქართული ფონტი -->
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-
-    <!-- Font Awesome (아이კონები) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <!-- Flatpickr 24-საათიანი datetime picker -->
+    <!-- Flatpickr -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/material_blue.css">
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ka.js"></script>
 
     <style>
-        /* Flatpickr-ის alt input რომ არ იყოს ნაცრისფერი read-only */
         .flatpickr-input[readonly] {
             background-color: #ffffff;
             cursor: text;
@@ -49,10 +44,16 @@
         <!-- Sidebar -->
         <aside class="sidebar">
             <div class="sidebar-header">
+                <div class="search-box">
+                    <div class="search-input-wrapper">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="patientSearch" placeholder="ძებნა (სახელი, პ/ნ)...">
+                    </div>
+                    <div id="searchResults" class="search-results" style="display: none;"></div>
+                </div>
                 <h3><i class="fas fa-folder-open"></i> დოკუმენტის ტიპი</h3>
             </div>
             <div class="doc-type-selector">
-                <!-- პირველ რიგში სამედიცინო ჩანაწერი -->
                 <button class="doc-type-btn active" data-type="medical_record">
                     <i class="fas fa-notes-medical"></i>
                     <span>სამედიცინო ჩანაწერი</span>
@@ -68,10 +69,9 @@
 
         <!-- Content -->
         <main class="content">
-            <!-- Documents Tab -->
             <section class="tab-content active" id="documentsTab">
 
-                <!-- =============== სამედიცინო ჩანაწერი (ზედა) =============== -->
+                <!-- =============== Medical Record =============== -->
                 <div class="document-form" id="medicalRecord">
                     <div class="form-header" style="background: linear-gradient(135deg, #059669, #10b981);">
                         <h2><i class="fas fa-notes-medical"></i> სამედიცინო ჩანაწერი</h2>
@@ -79,7 +79,7 @@
                     </div>
 
                     <form id="medicalRecordForm" class="medical-form">
-                        <!-- დაწესებულება -->
+                        <!-- Facility Info -->
                         <div class="form-section">
                             <div class="section-header">
                                 <i class="fas fa-hospital"></i>
@@ -97,7 +97,7 @@
                             </div>
                         </div>
 
-                        <!-- პაციენტი -->
+                        <!-- Patient Info -->
                         <div class="form-section patient-section">
                             <div class="section-header">
                                 <i class="fas fa-user-injured"></i>
@@ -106,11 +106,11 @@
                             <div class="form-grid">
                                 <div class="form-group">
                                     <label>ბარათის №</label>
-                                    <input type="text" name="card_number" class="form-control" placeholder="ბარათის ნომერი">
+                                    <input type="text" name="card_number" class="form-control" placeholder="სამედიცინო ბარათის ნომერი">
                                 </div>
                                 <div class="form-group">
                                     <label>სახელი, გვარი</label>
-                                    <input type="text" id="mr_patient_name" name="patient_name" class="form-control" placeholder="სახელი გვარი">
+                                    <input type="text" id="mr_patient_name" name="patient_name" class="form-control" placeholder="პაციენტის სახელი, გვარი">
                                 </div>
                                 <div class="form-group">
                                     <label>მიღების სტატუსი</label>
@@ -123,7 +123,7 @@
                             </div>
                         </div>
 
-                        <!-- დიაგნოზი -->
+                        <!-- Diagnosis -->
                         <div class="form-section">
                             <div class="section-header">
                                 <i class="fas fa-diagnoses"></i>
@@ -141,7 +141,7 @@
                             </div>
                         </div>
 
-                        <!-- ჩივილები და ანამნეზი -->
+                        <!-- Complaints -->
                         <div class="form-section">
                             <div class="section-header">
                                 <i class="fas fa-comment-medical"></i>
@@ -149,13 +149,11 @@
                             </div>
                             <div class="form-group full-width">
                                 <label>ჩივილები</label>
-                                <textarea name="complaints" class="form-control" rows="2"
-                                          placeholder="თავის ტკივილი, თავბრუსხვევა, გულისრევა..."></textarea>
+                                <textarea name="complaints" class="form-control" rows="2" placeholder="თავის ტკივილი..."></textarea>
                             </div>
                             <div class="form-group full-width">
                                 <label>ანამნეზი</label>
-                                <textarea name="anamnesis" class="form-control" rows="2"
-                                          placeholder="პაციენტის გადმოცემით, ჰოსპიტალიზაციამდე რამოდენიმე საათით ადრე..."></textarea>
+                                <textarea name="anamnesis" class="form-control" rows="2" placeholder="პაციენტის გადმოცემით..."></textarea>
                             </div>
                             <div class="form-group">
                                 <label>ალერგიები</label>
@@ -163,16 +161,14 @@
                             </div>
                         </div>
 
-                        <!-- ობიექტური სტატუსი -->
+                        <!-- Objective Status -->
                         <div class="form-section">
                             <div class="section-header">
                                 <i class="fas fa-stethoscope"></i>
                                 <h3>ობიექტური სტატუსი</h3>
                             </div>
-
-                            <!-- ვიტალები -->
                             <div class="subsection vitals-subsection">
-                                <h4><i class="fas fa-heartbeat"></i> ვიტალური მაჩვენებლები</h4>
+                                <h4><i class="fas fa-heartbeat"></i> ვიტალები</h4>
                                 <div class="form-grid vitals-grid">
                                     <div class="form-group">
                                         <label>T°C</label>
@@ -196,8 +192,6 @@
                                     </div>
                                 </div>
                             </div>
-
-                            <!-- სხვა სისტემები -->
                             <div class="form-grid">
                                 <div class="form-group">
                                     <label>ზოგადი მდგომარეობა</label>
@@ -219,33 +213,33 @@
                                     </select>
                                 </div>
                                 <div class="form-group full-width">
-                                    <label>გულ-სისხლძარღვთა სისტემა</label>
-                                    <input type="text" name="cardiovascular" class="form-control" placeholder="ტონები რითმული, პულსი საშუალო">
+                                    <label>გულ-სისხლძარღვთა</label>
+                                    <input type="text" name="cardiovascular" class="form-control" placeholder="ტონები რითმული">
                                 </div>
                                 <div class="form-group full-width">
-                                    <label>სასუნთქი სისტემა</label>
-                                    <input type="text" name="respiratory" class="form-control" placeholder="ვეზიკულური სუნთქვა">
+                                    <label>სასუნთქი</label>
+                                    <input type="text" name="respiratory" class="form-control" placeholder="ვეზიკულური">
                                 </div>
                                 <div class="form-group">
-                                    <label>საჭმლის მომნელებელი</label>
-                                    <input type="text" name="digestive" class="form-control" placeholder="მუცელი რბილი, უმტკივნეულო">
+                                    <label>საჭმ. მომნელებელი</label>
+                                    <input type="text" name="digestive" class="form-control" placeholder="მუცელი რბილი">
                                 </div>
                                 <div class="form-group">
                                     <label>შარდგამომყოფი</label>
-                                    <input type="text" name="urinary" class="form-control" placeholder="თავისუფალი, უმტკივნეულო">
+                                    <input type="text" name="urinary" class="form-control" placeholder="თავისუფალი">
                                 </div>
                                 <div class="form-group">
-                                    <label>ნერვული სისტემა</label>
+                                    <label>ნერვული</label>
                                     <input type="text" name="neurological" class="form-control" placeholder="GCS 15">
                                 </div>
                                 <div class="form-group">
-                                    <label>საყრდენ-მამოძრავებელი</label>
-                                    <input type="text" name="musculoskeletal" class="form-control" placeholder="ხილული პათოლოგიის გარეშე">
+                                    <label>მამოძრავებელი</label>
+                                    <input type="text" name="musculoskeletal" class="form-control" placeholder="ნორმა">
                                 </div>
                             </div>
                         </div>
 
-                        <!-- დიაგნოზი და ექიმი -->
+                        <!-- Preliminary Diagnosis -->
                         <div class="form-section">
                             <div class="section-header">
                                 <i class="fas fa-user-md"></i>
@@ -253,8 +247,7 @@
                             </div>
                             <div class="form-group full-width">
                                 <label>წინასწარი დიაგნოზი</label>
-                                <input type="text" name="preliminary_diagnosis" class="form-control"
-                                       placeholder="I10 ესენციური (პირველადი) ჰიპერტენზია">
+                                <input type="text" name="preliminary_diagnosis" class="form-control" placeholder="I10 ჰიპერტენზია">
                             </div>
                             <div class="form-group">
                                 <label>მკურნალი ექიმი</label>
@@ -262,89 +255,100 @@
                             </div>
                         </div>
 
-                        <!-- მიმდინარეობის ფურცელი -->
+                        <!-- Progress Notes -->
                         <div class="form-section">
                             <div class="section-header">
                                 <i class="fas fa-clipboard-list"></i>
-                                <h3>მიმდინარეობის ფურცელი (დღიური)</h3>
+                                <h3>მიმდინარეობის ფურცელი</h3>
                             </div>
 
-                            <!-- პირველადი შეფასება -->
+                            <!-- Initial -->
                             <div class="subsection">
-                                <h4><i class="fas fa-sign-in-alt"></i> პირველადი შეფასება / მიღება</h4>
+                                <h4><i class="fas fa-sign-in-alt"></i> პირველადი შეფასება</h4>
                                 <div class="form-grid">
                                     <div class="form-group">
-                                        <label for="mr_initial_date">თარიღი და დრო</label>
-                                        <input
-                                            type="text"
-                                            id="mr_initial_date"
-                                            name="initial_date"
-                                            class="form-control datetime-24"
-                                            placeholder="2025-06-27 14:30">
+                                        <label>თარიღი და დრო</label>
+                                        <input type="text" id="mr_initial_date" name="initial_date" class="form-control datetime-24" placeholder="2025-06-27 14:30">
                                     </div>
                                 </div>
                                 <div class="form-group full-width">
-                                    <label for="mr_initial_narrative">ჩანაწერი</label>
-                                    <textarea id="mr_initial_narrative" name="initial_narrative" class="form-control" rows="4"
-                                              placeholder="პაციენტი შემოსულია გადაუდებელი მედიცინის განყოფილებაში..."></textarea>
+                                    <label>ჩანაწერი</label>
+                                    <textarea name="initial_narrative" class="form-control" rows="4" placeholder="პაციენტი შემოსულია..."></textarea>
                                 </div>
                                 <div class="form-group full-width">
-                                    <label for="mr_initial_diagnosis">წინასწარი დიაგნოზი</label>
-                                    <input type="text" id="mr_initial_diagnosis" name="initial_diagnosis" class="form-control"
-                                           placeholder="I10 ესენციური (პირველადი) ჰიპერტენზია">
+                                    <label>წინასწარი დიაგნოზი</label>
+                                    <input type="text" name="initial_diagnosis" class="form-control" placeholder="ჰიპერტენზიული კრიზი I10">
                                 </div>
                             </div>
 
-                            <!-- დანიშნულებები -->
+                            <!-- Orders -->
                             <div class="subsection" style="border-color: rgba(245, 158, 11, 0.3);">
-                                <h4 style="color: #f59e0b;"><i class="fas fa-prescription"></i> დანიშნულება</h4>
+                                <h4 style="color: #f59e0b;"><i class="fas fa-prescription"></i> დანიშნულებები</h4>
                                 <div class="form-group full-width">
-                                    <label for="mr_investigations">გამოკვლევები (თითო ხაზზე)</label>
-                                    <textarea id="mr_investigations" name="investigations" class="form-control" rows="3"
-                                              placeholder="სისხლის საერთო ანალიზი BL.6&#10;გლუკოზის განსაზღვრა BL.12.1&#10;ელექტროკარდიოგრაფია FXF000"></textarea>
+                                    <label>გამოკვლევები</label>
+                                    <textarea name="investigations" class="form-control" rows="2" placeholder="BL.6&#10;BL.12.1"></textarea>
                                 </div>
                                 <div class="form-group full-width">
-                                    <label for="mr_medications">მედიკამენტები (თითო ხაზზე)</label>
-                                    <textarea id="mr_medications" name="medications" class="form-control" rows="3"
-                                              placeholder="T. Nifedipini 20mg x 1 P.O.&#10;S. Urapidil 5mg/ml 10.0ml x 1 I.V."></textarea>
+                                    <label>მედიკამენტები</label>
+                                    <textarea name="medications" class="form-control" rows="2" placeholder="T. Nifedipini 20mg"></textarea>
                                 </div>
                                 <div class="form-group">
-                                    <label for="mr_doctor_signature">ექიმი (სახელი, გვარი)</label>
-                                    <input type="text" id="mr_doctor_signature" name="doctor_signature" class="form-control"
-                                           placeholder="სახელი, გვარი">
+                                    <label>ექიმი</label>
+                                    <input type="text" name="doctor_signature" class="form-control" placeholder="სახელი, გვარი">
                                 </div>
                             </div>
 
-                            <!-- გადაფასება / გაწერა -->
+                            <!-- Discharge -->
                             <div class="subsection discharge-subsection">
-                                <h4><i class="fas fa-sign-out-alt"></i> გადაფასება / გაწერა</h4>
+                                <h4><i class="fas fa-sign-out-alt"></i> გაწერა</h4>
                                 <div class="form-grid">
                                     <div class="form-group">
-                                        <label for="mr_discharge_note_date">თარიღი და დრო</label>
-                                        <input
-                                            type="text"
-                                            id="mr_discharge_note_date"
-                                            name="discharge_note_date"
-                                            class="form-control datetime-24"
-                                            placeholder="2025-06-27 16:45">
+                                        <label>თარიღი და დრო</label>
+                                        <input type="text" id="mr_discharge_note_date" name="discharge_note_date" class="form-control datetime-24" placeholder="2025-06-27 16:45">
                                     </div>
                                 </div>
                                 <div class="form-group full-width">
-                                    <label for="mr_discharge_narrative">ჩანაწერი</label>
-                                    <textarea id="mr_discharge_narrative" name="discharge_narrative" class="form-control" rows="4"
-                                              placeholder="მკურნალობის ფონზე მდგომარეობა გაუმჯობესდა..."></textarea>
+                                    <label>ჩანაწერი</label>
+                                    <textarea name="discharge_narrative" class="form-control" rows="4" placeholder="მკურნალობის შემდეგ..."></textarea>
                                 </div>
                                 <div class="form-group">
-                                    <label for="mr_discharge_doctor">ექიმი</label>
-                                    <input type="text" id="mr_discharge_doctor" name="discharge_doctor" class="form-control"
-                                           placeholder="სახელი, გვარი">
+                                    <label>ექიმი</label>
+                                    <input type="text" name="discharge_doctor" class="form-control" placeholder="სახელი, გვარი">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- MR Signature Upload -->
+                        <div class="form-section">
+                            <div class="section-header">
+                                <i class="fas fa-signature"></i>
+                                <h3>ელექტრონული ხელმოწერა</h3>
+                            </div>
+                            <div class="signatures-section">
+                                <div class="signatures-grid" style="grid-template-columns: 1fr; max-width: 300px;">
+                                    <div class="signature-box">
+                                        <label>ექიმის ხელმოწერა</label>
+                                        <div class="signature-preview" id="mrDoctorSigPreview">
+                                            <span>ატვირთეთ</span>
+                                        </div>
+                                        <input type="file" id="mrDoctorSigInput" accept="image/*" style="display:none;">
+                                        <input type="hidden" name="doctor_signature_image" id="mrDoctorSigData">
+                                        <div class="signature-buttons">
+                                            <button type="button" class="btn-upload" onclick="document.getElementById('mrDoctorSigInput').click()">
+                                                <i class="fas fa-upload"></i> ატვირთვა
+                                            </button>
+                                            <button type="button" class="btn-clear-sig" onclick="clearSignature('mrDoctor')">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </form>
                 </div>
 
-                <!-- =============== ფორმა №100/ა (ქვემოთ) =============== -->
+                <!-- =============== Form 100 =============== -->
                 <div class="document-form" id="form100">
                     <div class="form-header">
                         <h2><i class="fas fa-file-medical-alt"></i> ფორმა № IV-100/ა</h2>
@@ -352,7 +356,7 @@
                     </div>
 
                     <form id="form100Form" class="medical-form">
-                        <!-- დოკუმენტის ინფორმაცია -->
+                        <!-- Doc Info -->
                         <div class="form-section">
                             <div class="section-header">
                                 <i class="fas fa-info-circle"></i>
@@ -361,8 +365,7 @@
                             <div class="form-grid">
                                 <div class="form-group">
                                     <label>ფორმის ტიპი</label>
-                                    <input type="text" name="form_type" class="form-control"
-                                           value="სამედიცინო დოკუმენტაცია ფორმა № IV-100/ა">
+                                    <input type="text" name="form_type" class="form-control" value="სამედიცინო დოკუმენტაცია ფორმა № IV-100/ა">
                                 </div>
                                 <div class="form-group">
                                     <label>ბარათის №</label>
@@ -375,7 +378,7 @@
                             </div>
                         </div>
 
-                        <!-- 1. გამცემი ორგანიზაცია -->
+                        <!-- 1. Issuer -->
                         <div class="form-section">
                             <div class="section-header">
                                 <i class="fas fa-building"></i>
@@ -397,37 +400,31 @@
                             </div>
                         </div>
 
-                        <!-- 2. მიმღები ორგანიზაცია -->
+                        <!-- 2. Recipient -->
                         <div class="form-section">
                             <div class="section-header">
                                 <i class="fas fa-building-user"></i>
                                 <h3>2. მიმღები ორგანიზაცია</h3>
                             </div>
                             <div class="form-group full-width">
-                                <input type="text" name="recipient_name" class="form-control"
-                                       value="სსიპ ჯანმრთელობის ეროვნული სააგენტო - საყოველთაო ჯანდაცვა">
+                                <input type="text" name="recipient_name" class="form-control" value="სსიპ ჯანმრთელობის ეროვნული სააგენტო- საყოველთაო ჯანდაცვა">
                             </div>
                         </div>
 
-                        <!-- 3-7. პაციენტის ინფორმაცია -->
+                        <!-- 3-7. Patient -->
                         <div class="form-section patient-section">
                             <div class="section-header">
                                 <i class="fas fa-user-injured"></i>
-                                <h3>პაციენტის მონაცემები (3-7)</h3>
+                                <h3>პაციენტის მონაცემები</h3>
                             </div>
                             <div class="form-grid">
                                 <div class="form-group full-width">
                                     <label>3. სახელი, გვარი</label>
-                                    <input type="text" id="patient_name" name="patient_name" class="form-control" placeholder="პაციენტის სახელი, გვარი">
+                                    <input type="text" id="patient_name" name="patient_name" class="form-control" placeholder="პაციენტის სახელი გვარი">
                                 </div>
                                 <div class="form-group">
                                     <label>4. დაბადების თარიღი</label>
-                                    <input
-                                        type="text"
-                                        name="birth_date"
-                                        class="form-control date-only"
-                                        placeholder="დაბადების თარიღი">
-
+                                    <input type="text" name="birth_date" class="form-control date-only" placeholder="21.09.1957">
                                 </div>
                                 <div class="form-group">
                                     <label>5. პირადი ნომერი</label>
@@ -444,7 +441,7 @@
                             </div>
                         </div>
 
-                        <!-- 8. ჰოსპიტალიზაციის ვადები (24h picker) -->
+                        <!-- 8. Dates -->
                         <div class="form-section">
                             <div class="section-header">
                                 <i class="fas fa-calendar-alt"></i>
@@ -452,25 +449,17 @@
                             </div>
                             <div class="form-grid">
                                 <div class="form-group">
-                                    <label>მიღების თარიღი და დრო</label>
-                                    <input
-                                        type="text"
-                                        name="hospitalization_date"
-                                        class="form-control datetime-24"
-                                        placeholder="გაწერის დრო">
+                                    <label>მიღება</label>
+                                    <input type="text" name="hospitalization_date" class="form-control datetime-24" placeholder="2025-06-27 14:30">
                                 </div>
                                 <div class="form-group">
-                                    <label>გაწერის თარიღი და დრო</label>
-                                    <input
-                                        type="text"
-                                        name="discharge_date"
-                                        class="form-control datetime-24"
-                                        placeholder="2025-06-27 16:45">
+                                    <label>გაწერა</label>
+                                    <input type="text" name="discharge_date" class="form-control datetime-24" placeholder="2025-06-27 16:45">
                                 </div>
                             </div>
                         </div>
 
-                        <!-- 9. დიაგნოზი -->
+                        <!-- 9. Diagnosis -->
                         <div class="form-section">
                             <div class="section-header">
                                 <i class="fas fa-diagnoses"></i>
@@ -478,7 +467,7 @@
                             </div>
                             <div class="form-grid">
                                 <div class="form-group full-width">
-                                    <label>ძირითადი დიაგნოზი (ICD-10)</label>
+                                    <label>ძირითადი დიაგნოზი</label>
                                     <input type="text" name="main_diagnosis" class="form-control" placeholder="ესენციური ჰიპერტენზია I10">
                                 </div>
                                 <div class="form-group">
@@ -488,7 +477,7 @@
                             </div>
                         </div>
 
-                        <!-- 10-11. ანამნეზი -->
+                        <!-- 10-11 -->
                         <div class="form-section">
                             <div class="section-header">
                                 <i class="fas fa-history"></i>
@@ -504,11 +493,11 @@
                             </div>
                         </div>
 
-                        <!-- 12. გამოკვლევები -->
+                        <!-- 12. Investigations -->
                         <div class="form-section">
                             <div class="section-header">
                                 <i class="fas fa-flask"></i>
-                                <h3>12. ჩატარებული გამოკვლევები</h3>
+                                <h3>12. გამოკვლევები</h3>
                             </div>
                             <div class="form-group full-width">
                                 <label>სისხლის ანალიზი</label>
@@ -526,7 +515,7 @@
                             </div>
                         </div>
 
-                        <!-- 13. მიმდინარეობა -->
+                        <!-- 13. Course -->
                         <div class="form-section">
                             <div class="section-header">
                                 <i class="fas fa-chart-line"></i>
@@ -537,7 +526,6 @@
                                     <label>ტიპი</label>
                                     <select name="course_type" class="form-control">
                                         <option value="მწვავე">მწვავე</option>
-                                        <option value="ქვემწვავე">მწვავე</option>
                                         <option value="ქრონიკული">ქრონიკული</option>
                                     </select>
                                 </div>
@@ -547,13 +535,67 @@
                                 </div>
                             </div>
 
+                            <!-- Vitals Admission -->
+                            <div class="subsection vitals-subsection">
+                                <h4><i class="fas fa-heartbeat"></i> ვიტალები მიღებისას</h4>
+                                <div class="form-grid vitals-grid">
+                                    <div class="form-group">
+                                        <label>T°C</label>
+                                        <input type="text" name="admission_temp" class="form-control" placeholder="36.6">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>HR</label>
+                                        <input type="text" name="admission_hr" class="form-control" placeholder="85">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>BP</label>
+                                        <input type="text" name="admission_bp" class="form-control" placeholder="180/120">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>RR</label>
+                                        <input type="text" name="admission_rr" class="form-control" placeholder="17">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>SpO2</label>
+                                        <input type="text" name="admission_spo2" class="form-control" placeholder="98%">
+                                    </div>
+                                </div>
+                            </div>
+
                             <div class="form-group full-width">
                                 <label>მდგომარეობა გაწერისას</label>
-                                <textarea name="discharge_status" class="form-control" rows="2" placeholder="ჩატარებული მკურნალობის ფონზე..."></textarea>
+                                <textarea name="discharge_status" class="form-control" rows="2" placeholder="ჩატარებული მკურალობის ფონზე..."></textarea>
+                            </div>
+
+                            <!-- Vitals Discharge -->
+                            <div class="subsection discharge-vitals-subsection">
+                                <h4><i class="fas fa-heart"></i> ვიტალები გაწერისას</h4>
+                                <div class="form-grid vitals-grid">
+                                    <div class="form-group">
+                                        <label>T°C</label>
+                                        <input type="text" name="discharge_temp" class="form-control" placeholder="36.7">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>HR</label>
+                                        <input type="text" name="discharge_hr" class="form-control" placeholder="70">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>BP</label>
+                                        <input type="text" name="discharge_bp" class="form-control" placeholder="135/80">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>RR</label>
+                                        <input type="text" name="discharge_rr" class="form-control" placeholder="16">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>SpO2</label>
+                                        <input type="text" name="discharge_spo2" class="form-control" placeholder="97%">
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
-                        <!-- 14. მკურნალობა -->
+                        <!-- 14. Treatment -->
                         <div class="form-section">
                             <div class="section-header">
                                 <i class="fas fa-pills"></i>
@@ -561,8 +603,7 @@
                             </div>
                             <div class="form-group full-width">
                                 <label>მედიკამენტები</label>
-                                <textarea name="medications" class="form-control" rows="2"
-                                          placeholder="T.Niphedipini 20mg x 1 I.V.&#10;S.Urapidili 5mg/ml 10.0ml x 1 I.V."></textarea>
+                                <textarea name="medications" class="form-control" rows="2" placeholder="T.Niphedipini 20mg..."></textarea>
                             </div>
                             <div class="form-group">
                                 <label>კოდი</label>
@@ -570,11 +611,11 @@
                             </div>
                         </div>
 
-                        <!-- 15-17. გამოსავალი -->
+                        <!-- 15-17. Outcome -->
                         <div class="form-section discharge-section">
                             <div class="section-header">
                                 <i class="fas fa-sign-out-alt"></i>
-                                <h3>გამოსავალი (15-17)</h3>
+                                <h3>გამოსავალი</h3>
                             </div>
                             <div class="form-grid">
                                 <div class="form-group">
@@ -587,17 +628,16 @@
                                 </div>
                                 <div class="form-group full-width">
                                     <label>17. რეკომენდაციები</label>
-                                    <textarea name="recommendations" class="form-control" rows="2"
-                                              placeholder="არტერიული წნევის კონტროლი..."></textarea>
+                                    <textarea name="recommendations" class="form-control" rows="2" placeholder="არტერიული წნევის კონტროლი..."></textarea>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- 18-20. ხელმოწერები -->
+                        <!-- 18-20. Signatures -->
                         <div class="form-section">
                             <div class="section-header">
                                 <i class="fas fa-signature"></i>
-                                <h3>ხელმოწერები (18-20)</h3>
+                                <h3>ხელმოწერები</h3>
                             </div>
                             <div class="form-grid">
                                 <div class="form-group">
@@ -610,19 +650,50 @@
                                 </div>
                                 <div class="form-group">
                                     <label>20. გაცემის თარიღი</label>
-                                    <input
-                                            type="text"
-                                            name="birth_date"
-                                            class="form-control date-only"
-                                            placeholder="ცნობის გაცემის თარიღი">
+                                    <input type="text" name="issue_date" class="form-control date-only" placeholder="ცნობის გაცემის თარიღი">
+                                </div>
+                            </div>
 
+                            <!-- F100 Signature Uploads -->
+                            <div class="signatures-section">
+                                <div class="signatures-grid">
+                                    <div class="signature-box">
+                                        <label>ექიმი</label>
+                                        <div class="signature-preview" id="doctorSigPreview"><span>ატვირთეთ</span></div>
+                                        <input type="file" id="doctorSigInput" accept="image/*" style="display:none;">
+                                        <input type="hidden" name="doctor_signature_image" id="doctorSigData">
+                                        <div class="signature-buttons">
+                                            <button type="button" class="btn-upload" onclick="document.getElementById('doctorSigInput').click()"><i class="fas fa-upload"></i></button>
+                                            <button type="button" class="btn-clear-sig" onclick="clearSignature('doctor')"><i class="fas fa-times"></i></button>
+                                        </div>
+                                    </div>
+                                    <div class="signature-box">
+                                        <label>ბეჭედი</label>
+                                        <div class="signature-preview" id="stampPreview"><span>ატვირთეთ</span></div>
+                                        <input type="file" id="stampInput" accept="image/*" style="display:none;">
+                                        <input type="hidden" name="stamp_image" id="stampData">
+                                        <div class="signature-buttons">
+                                            <button type="button" class="btn-upload" onclick="document.getElementById('stampInput').click()"><i class="fas fa-upload"></i></button>
+                                            <button type="button" class="btn-clear-sig" onclick="clearSignature('stamp')"><i class="fas fa-times"></i></button>
+                                        </div>
+                                    </div>
+                                    <div class="signature-box">
+                                        <label>ხელმძღვანელი</label>
+                                        <div class="signature-preview" id="headSigPreview"><span>ატვირთეთ</span></div>
+                                        <input type="file" id="headSigInput" accept="image/*" style="display:none;">
+                                        <input type="hidden" name="head_signature_image" id="headSigData">
+                                        <div class="signature-buttons">
+                                            <button type="button" class="btn-upload" onclick="document.getElementById('headSigInput').click()"><i class="fas fa-upload"></i></button>
+                                            <button type="button" class="btn-clear-sig" onclick="clearSignature('head')"><i class="fas fa-times"></i></button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </form>
                 </div>
 
-                <!-- ღილაკები -->
+                <!-- Action Buttons -->
                 <div class="action-bar">
                     <div class="action-group">
                         <button type="button" class="btn btn-template" id="saveAsTemplate">
@@ -643,33 +714,31 @@
                 </div>
             </section>
 
-            <!-- Templates Tab -->
+            <!-- Templates -->
             <section class="tab-content" id="templatesTab">
                 <div class="templates-header">
                     <h2><i class="fas fa-copy"></i> შენახული შაბლონები</h2>
-                    <p>აქ შეგიძლიათ მართოთ თქვენი შაბლონები</p>
                 </div>
                 <div class="templates-grid" id="templatesGrid"></div>
                 <div class="empty-state" id="emptyTemplates" style="display: none;">
                     <i class="fas fa-folder-open"></i>
                     <h3>შაბლონები არ არის</h3>
-                    <p>შეინახეთ ფორმა შაბლონად</p>
                 </div>
             </section>
         </main>
     </div>
 
-    <!-- Template Modal -->
+    <!-- Modals -->
     <div class="modal" id="templateModal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3><i class="fas fa-bookmark"></i> შაბლონის შენახვა</h3>
+                <h3>შაბლონის შენახვა</h3>
                 <button class="modal-close" id="closeModal">&times;</button>
             </div>
             <div class="modal-body">
                 <div class="form-group">
-                    <label>შაბლონის სახელი</label>
-                    <input type="text" id="templateName" class="form-control" placeholder="მაგ: ჰიპერტენზიის შაბლონი">
+                    <label>სახელი</label>
+                    <input type="text" id="templateName" class="form-control" placeholder="მაგ: ჰიპერტენზია">
                 </div>
             </div>
             <div class="modal-footer">
@@ -679,16 +748,15 @@
         </div>
     </div>
 
-    <!-- Filename Modal -->
     <div class="modal" id="filenameModal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3><i class="fas fa-file"></i> ფაილის სახელი</h3>
+                <h3>ფაილის სახელი</h3>
                 <button class="modal-close" id="closeFilenameModal">&times;</button>
             </div>
             <div class="modal-body">
                 <div class="form-group">
-                    <label>ფაილის სახელი</label>
+                    <label>სახელი</label>
                     <input type="text" id="docFilename" class="form-control">
                 </div>
             </div>
@@ -699,13 +767,11 @@
         </div>
     </div>
 
-    <!-- Toast -->
     <div class="toast" id="toast">
         <i class="fas fa-check-circle"></i>
         <span id="toastMessage"></span>
     </div>
 
-    <!-- Loading Overlay -->
     <div class="loading-overlay" id="loadingOverlay">
         <div class="loader">
             <div class="spinner"></div>

@@ -818,6 +818,53 @@ def get_signatures():
     return jsonify({'success': True, 'signatures': signatures})
 
 
+@app.route('/api/search-patients', methods=['GET'])
+def search_patients():
+    query = request.args.get('q', '').lower()
+    if not query:
+        return jsonify({'success': True, 'results': []})
+
+    results = []
+
+    # 1. შენახული დოკუმენტების ძებნა (documents/)
+    if os.path.exists(DOCUMENTS_FOLDER):
+        for filename in os.listdir(DOCUMENTS_FOLDER):
+            if filename.endswith('.docx') and query in filename.lower():
+                results.append({
+                    'type': 'document',
+                    'name': filename,
+                    'path': f'/api/download/{filename}',
+                    'date': datetime.fromtimestamp(os.path.getmtime(os.path.join(DOCUMENTS_FOLDER, filename))).strftime(
+                        '%Y-%m-%d %H:%M')
+                })
+
+    # 2. შაბლონების ძებნა (saved_templates/) - JSON შიგთავსში
+    if os.path.exists(TEMPLATES_FOLDER):
+        for filename in os.listdir(TEMPLATES_FOLDER):
+            if filename.endswith('.json'):
+                try:
+                    path = os.path.join(TEMPLATES_FOLDER, filename)
+                    with open(path, 'r', encoding='utf-8') as f:
+                        data = json.load(f)
+
+                    # ვეძებთ პაციენტის სახელს ან პირად ნომერს
+                    patient_name = data.get('patient_name', '').lower()
+                    personal_id = data.get('personal_id', '')
+                    template_name = data.get('template_name', '').lower()
+
+                    if query in patient_name or query in personal_id or query in template_name:
+                        results.append({
+                            'type': 'template',
+                            'name': data.get('template_name', filename),
+                            'id': filename.replace('.json', ''),
+                            'patient': data.get('patient_name', '-'),
+                            'date': data.get('created', '')[:16].replace('T', ' ')
+                        })
+                except:
+                    continue
+
+    return jsonify({'success': True, 'results': results})
+
 # ==================== Templates API ====================
 
 @app.route('/api/templates', methods=['GET'])
