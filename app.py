@@ -113,7 +113,7 @@ def create_form_100_document(data):
     date_para = doc.add_paragraph()
     date_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
     date_para.add_run(
-        f"გაცემის თარიღი: {data.get('document_date', '')}     რეგისტრაციის №: {data.get('registration_number', '')}")
+        f"გაცემის თარიღი: {data.get('document_date', '')}     ბარათის №: {data.get('registration_number', '')}")
 
     doc.add_paragraph()
 
@@ -183,7 +183,7 @@ def create_form_100_document(data):
     set_cell_shading(t5.rows[0].cells[0], "FCE4D6")
     t5.rows[1].cells[0].text = "ძირითადი:"
     t5.rows[1].cells[1].text = data.get('main_diagnosis', '')
-    t5.rows[2].cells[0].text = "საქმის კოდი:"
+    t5.rows[2].cells[0].text = "ექიმის მიერ დაზუსტება:"
     t5.rows[2].cells[1].text = data.get('case_code', '')
 
     doc.add_paragraph()
@@ -211,9 +211,9 @@ def create_form_100_document(data):
     t8.style = 'Table Grid'
     t8.rows[0].cells[0].text = "12. ჩატარებული გამოკვლევები"
     set_cell_shading(t8.rows[0].cells[0], "D9E2F3")
-    t8.rows[1].cells[0].text = f"სისხლი: {data.get('blood_analysis', '')}"
-    t8.rows[2].cells[0].text = f"ბიოქიმია: {data.get('biochemistry', '')}"
-    t8.rows[3].cells[0].text = f"ინსტრუმენტული: {data.get('instrumental', '')}"
+    t8.rows[1].cells[0].text = f"სისხლის საერთო ანალიზი BL.6: {data.get('blood_analysis', '')}"
+    t8.rows[2].cells[0].text = f"გლუკოზის განსაზღვრა სისხლის შრატში BL.12.1: {data.get('biochemistry', '')}"
+    t8.rows[3].cells[0].text = f"ინსტრუმენტული კვლევები: {data.get('instrumental', '')}"
 
     doc.add_paragraph()
 
@@ -273,7 +273,7 @@ def create_form_100_document(data):
     t12.rows[2].cells[0].text = "19. დაწესებულების ხელმძღვანელი:"
     t12.rows[2].cells[1].text = data.get('facility_head', '')
 
-    t12.rows[3].cells[0].text = "20. გაცემის თარიღი:"
+    t12.rows[3].cells[0].text = "20. ცნობის გაცემის თარიღი:"
     t12.rows[3].cells[1].text = data.get('issue_date', '')
 
     doc.add_paragraph()
@@ -389,7 +389,7 @@ def create_medical_record_document(data):
     t2.rows[0].cells[0].merge(t2.rows[0].cells[1])
     t2.rows[0].cells[0].text = "დიაგნოზი (ICD-10)"
     set_cell_shading(t2.rows[0].cells[0], "FCE4D6")
-    t2.rows[1].cells[0].text = f"კოდი: {data.get('icd_code', '')}"
+    t2.rows[1].cells[0].text = f"ZYZA10 ამბულატორია (გადაუდებელი): {data.get('icd_code', '')}"
     t2.rows[1].cells[1].text = data.get('diagnosis_description', '')
 
     doc.add_paragraph()
