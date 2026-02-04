@@ -127,43 +127,49 @@ function initDateTimePickers() {
 
 // ===== Medical Record -> Form 100 Auto Sync =====
 function initCardNumberSync() {
-    // 1. ბარათის ნომერი -> რეგისტრაციის №
-    const mrCard = document.querySelector('#medicalRecordForm [name="card_number"]');
-    const f100Reg = document.querySelector('#form100Form [name="registration_number"]');
 
-    if (mrCard && f100Reg) {
-        // თუ მომხმარებელი ხელით შეეხო ფორმა 100-ს, აღარ გადავაწეროთ
-        f100Reg.addEventListener('input', () => {
-            f100Reg.dataset.manualEdited = 'true';
-        });
+    // დამხმარე ფუნქცია ველების დასაკავშირებლად
+    function syncFields(mrSelector, f100Selector) {
+        const mrField = document.querySelector(mrSelector);
+        const f100Field = document.querySelector(f100Selector);
 
-        mrCard.addEventListener('input', () => {
-            const val = mrCard.value;
-            // გადავაწეროთ მხოლოდ თუ ცარიელია ან ავტომატურად იყო შევსებული და ხელით არ შეუცვლიათ
-            if (!f100Reg.value || (f100Reg.dataset.autoFilled === 'true' && f100Reg.dataset.manualEdited !== 'true')) {
-                f100Reg.value = val;
-                f100Reg.dataset.autoFilled = 'true';
-            }
-        });
+        if (mrField && f100Field) {
+            // თუ ფორმა 100-ში ხელით ჩაწერეს, აღარ გადავაწეროთ
+            f100Field.addEventListener('input', () => {
+                f100Field.dataset.manualEdited = 'true';
+            });
+
+            // MR-ში ჩაწერისას გადავიდეს F100-ში
+            mrField.addEventListener('input', () => {
+                if (!f100Field.value || (f100Field.dataset.autoFilled === 'true' && f100Field.dataset.manualEdited !== 'true')) {
+                    f100Field.value = mrField.value;
+                    f100Field.dataset.autoFilled = 'true';
+                }
+            });
+        }
     }
+
+    // 1. ბარათის ნომერი -> რეგისტრაციის №
+    syncFields('#medicalRecordForm [name="card_number"]', '#form100Form [name="registration_number"]');
 
     // 2. სახელი, გვარი -> სახელი, გვარი
-    const mrName = document.querySelector('#medicalRecordForm [name="patient_name"]');
-    const f100Name = document.querySelector('#form100Form [name="patient_name"]'); // აქ ID იყო ადრე, ახლა name-ით ვეძებთ
+    syncFields('#medicalRecordForm [name="patient_name"]', '#form100Form [name="patient_name"]');
 
-    if (mrName && f100Name) {
-        f100Name.addEventListener('input', () => {
-            f100Name.dataset.manualEdited = 'true';
-        });
+    // 3. ვიტალები (MR ობიექტური სტატუსი -> F100 მიღებისას)
+    // T (ტემპერატურა)
+    syncFields('#medicalRecordForm [name="temperature"]', '#form100Form [name="admission_temp"]');
 
-        mrName.addEventListener('input', () => {
-            const val = mrName.value;
-            if (!f100Name.value || (f100Name.dataset.autoFilled === 'true' && f100Name.dataset.manualEdited !== 'true')) {
-                f100Name.value = val;
-                f100Name.dataset.autoFilled = 'true';
-            }
-        });
-    }
+    // BP (წნევა)
+    syncFields('#medicalRecordForm [name="blood_pressure"]', '#form100Form [name="admission_bp"]');
+
+    // HR (პულსი)
+    syncFields('#medicalRecordForm [name="heart_rate"]', '#form100Form [name="admission_hr"]');
+
+    // RR (სუნთქვა)
+    syncFields('#medicalRecordForm [name="respiratory_rate"]', '#form100Form [name="admission_rr"]');
+
+    // SpO2
+    syncFields('#medicalRecordForm [name="spo2"]', '#form100Form [name="admission_spo2"]');
 }
 
 // ===== Signatures (ატვირთვა / გასუფთავება) =====
@@ -729,3 +735,4 @@ function copyToEHR() {
 window.useTemplate = useTemplate;
 window.deleteTemplate = deleteTemplate;
 window.clearSignature = clearSignature;
+window.copyToEHR = copyToEHR;
