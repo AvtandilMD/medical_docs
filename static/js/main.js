@@ -135,17 +135,11 @@ function initCardNumberSync() {
 
         if (mrField && f100Field) {
             // თუ ფორმა 100-ში ხელით ჩაწერეს, აღარ გადავაწეროთ
-            f100Field.addEventListener('input', () => {
-                f100Field.dataset.manualEdited = 'true';
-            });
-            // Flatpickr-ის შემთხვევაში change ივენთი უფრო საიმედოა
-            f100Field.addEventListener('change', () => {
-                f100Field.dataset.manualEdited = 'true';
-            });
+            f100Field.addEventListener('input', () => { f100Field.dataset.manualEdited = 'true'; });
+            f100Field.addEventListener('change', () => { f100Field.dataset.manualEdited = 'true'; });
 
             const updateHandler = () => {
                 if (!f100Field.value || (f100Field.dataset.autoFilled === 'true' && f100Field.dataset.manualEdited !== 'true')) {
-                    // თუ ეს flatpickr ველია, გამოვიყენოთ მისი API
                     if (f100Field._flatpickr) {
                         f100Field._flatpickr.setDate(mrField.value);
                     } else {
@@ -155,7 +149,6 @@ function initCardNumberSync() {
                 }
             };
 
-            // ვუსმენთ input-საც და change-საც (რადგან flatpickr change-ს ისვრის)
             mrField.addEventListener('input', updateHandler);
             mrField.addEventListener('change', updateHandler);
         }
@@ -166,11 +159,43 @@ function initCardNumberSync() {
     syncFields('#medicalRecordForm [name="patient_name"]', '#form100Form [name="patient_name"]');
 
     // 2. თარიღები
-    // პირველადი შეფასება (MR) -> მიღების თარიღი (F100)
-    syncFields('#mr_initial_date', '#form100Form [name="hospitalization_date"]');
-
-    // გაწერა (MR) -> გაწერის თარიღი (F100)
+    // გაწერა (MR) -> გაწერის თარიღი (F100 - 8 პუნქტი)
     syncFields('#mr_discharge_note_date', '#form100Form [name="discharge_date"]');
+
+    // --- სპეციალური სინქრონიზაცია პირველადი შეფასების თარიღისთვის ---
+    const mrInitialDate = document.getElementById('mr_initial_date');
+
+    if (mrInitialDate) {
+        const handler = () => {
+            const val = mrInitialDate.value; // მაგ: "2025-06-27 14:30"
+            const dateOnly = val ? val.split(' ')[0] : ''; // მაგ: "2025-06-27"
+
+            // 1. F100: ჰოსპიტალიზაციის მიღება (სრული დროით)
+            updateField('#form100Form [name="hospitalization_date"]', val);
+
+            // 2. F100: დოკუმენტის თარიღი (მხოლოდ თარიღი)
+            updateField('#form100Form [name="document_date"]', dateOnly);
+
+            // 3. F100: გაცემის თარიღი - 20 პუნქტი (მხოლოდ თარიღი)
+            updateField('#form100Form [name="issue_date"]', dateOnly);
+        };
+
+        mrInitialDate.addEventListener('input', handler);
+        mrInitialDate.addEventListener('change', handler);
+    }
+
+    // დამხმარე ფუნქცია კონკრეტულად ამ ლოგიკისთვის
+    function updateField(selector, value) {
+        const el = document.querySelector(selector);
+        if (el && (!el.value || (el.dataset.autoFilled === 'true' && el.dataset.manualEdited !== 'true'))) {
+            if (el._flatpickr) {
+                el._flatpickr.setDate(value);
+            } else {
+                el.value = value;
+            }
+            el.dataset.autoFilled = 'true';
+        }
+    }
 
     // 3. ვიტალები
     syncFields('#medicalRecordForm [name="temperature"]', '#form100Form [name="admission_temp"]');
