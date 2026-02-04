@@ -327,7 +327,14 @@ async function handleSave(filename) {
             return;
         }
 
-        showToast('დოკუმენტი შენახულია!', 'success');
+        // შეტყობინება
+        if (result.is_pdf) {
+            showToast('PDF დოკუმენტი შენახულია!', 'success');
+        } else {
+            showToast('დოკუმენტი შენახულია (DOCX)!', 'warning');
+        }
+
+        // გადმოწერა
         const link = document.createElement('a');
         link.href = `/api/download/${result.filename}`;
         link.download = result.filename;
