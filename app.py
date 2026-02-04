@@ -159,7 +159,7 @@ def _build_form_100_structure(data, font_size_pt):
     p = doc.add_paragraph()
     p.alignment = WD_ALIGN_PARAGRAPH.CENTER
     p.add_run(
-        f"გაცემის თარიღი: {data.get('document_date', '')}     რეგისტრაციის №: {data.get('registration_number', '')}")
+        f"გაცემის თარიღი: {data.get('document_date', '')}     ბარათის №: {data.get('registration_number', '')}")
 
     doc.add_paragraph()
 
@@ -308,7 +308,7 @@ def _build_form_100_structure(data, font_size_pt):
     t12.rows[1].cells[1].text = data.get('attending_doctor', '')
     t12.rows[2].cells[0].text = "19. დაწესებულების ხელმძღვანელი:"
     t12.rows[2].cells[1].text = data.get('facility_head', '')
-    t12.rows[3].cells[0].text = "20. გაცემის თარიღი:"
+    t12.rows[3].cells[0].text = "20. ცნობის გაცემის თარიღი:"
     t12.rows[3].cells[1].text = data.get('issue_date', '')
     doc.add_paragraph()
 
@@ -618,10 +618,30 @@ def print_document():
     try:
         data = request.json
         doc_type = data.get('document_type', 'form_100')
-        filename = f'print_{datetime.now().strftime("%Y%m%d_%H%M%S")}'
+
+        # --- ფაილის სახელის ავტომატური გენერაცია ---
+
+        # 1. პაციენტის სახელი (თუ ცარიელია, დაერქმევა 'Pacienti')
+        patient_name = data.get('patient_name', '').strip()
+        if not patient_name:
+            patient_name = "Pacienti"
+
+        # 2. თარიღი (პრიორიტეტი: დოკუმენტის თარიღი -> გაცემის თარიღი -> დღევანდელი)
+        date_str = data.get('document_date') or data.get('issue_date') or datetime.now().strftime("%Y-%m-%d")
+
+        # 3. სახელის გასუფთავება (სპეისების შეცვლა ქვედა ტირეებით და უსაფრთხო სიმბოლოები)
+        # დავტოვოთ ქართული ასოები, ლათინური, ციფრები და ტირეები
+        safe_chars = set(
+            'აბგდევზთიკლმნოპჟრსტუფქღყშჩცძწჭხჯჰabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_ ')
+        clean_name = "".join(c for c in patient_name if c in safe_chars)
+        clean_name = clean_name.replace(' ', '_')  # სპეისის შეცვლა ტირეთი
+
+        # 4. საბოლოო სახელი: სახელი_გვარი_თარიღი
+        filename = f"{clean_name}_{date_str}"
+
+        # -------------------------------------------
 
         if doc_type == 'form_100':
-            # ბეჭდვისთვის -> პატარა შრიფტი (10)
             doc = create_form_100_document_print(data)
         else:
             doc = create_medical_record_document(data)

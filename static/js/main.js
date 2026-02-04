@@ -125,24 +125,45 @@ function initDateTimePickers() {
     });
 }
 
-// ===== Card Number -> Registration Number Sync =====
+// ===== Medical Record -> Form 100 Auto Sync =====
 function initCardNumberSync() {
-    const mrCardNumber = document.querySelector('#medicalRecordForm [name="card_number"]');
-    const form100Reg   = document.querySelector('#form100Form [name="registration_number"]');
+    // 1. ბარათის ნომერი -> რეგისტრაციის №
+    const mrCard = document.querySelector('#medicalRecordForm [name="card_number"]');
+    const f100Reg = document.querySelector('#form100Form [name="registration_number"]');
 
-    if (!mrCardNumber || !form100Reg) return;
+    if (mrCard && f100Reg) {
+        // თუ მომხმარებელი ხელით შეეხო ფორმა 100-ს, აღარ გადავაწეროთ
+        f100Reg.addEventListener('input', () => {
+            f100Reg.dataset.manualEdited = 'true';
+        });
 
-    form100Reg.addEventListener('input', () => {
-        form100Reg.dataset.manualEdited = 'true';
-    });
+        mrCard.addEventListener('input', () => {
+            const val = mrCard.value;
+            // გადავაწეროთ მხოლოდ თუ ცარიელია ან ავტომატურად იყო შევსებული და ხელით არ შეუცვლიათ
+            if (!f100Reg.value || (f100Reg.dataset.autoFilled === 'true' && f100Reg.dataset.manualEdited !== 'true')) {
+                f100Reg.value = val;
+                f100Reg.dataset.autoFilled = 'true';
+            }
+        });
+    }
 
-    mrCardNumber.addEventListener('input', () => {
-        const val = mrCardNumber.value;
-        if (!form100Reg.value || (form100Reg.dataset.autoFilled === 'true' && form100Reg.dataset.manualEdited !== 'true')) {
-            form100Reg.value = val;
-            form100Reg.dataset.autoFilled = 'true';
-        }
-    });
+    // 2. სახელი, გვარი -> სახელი, გვარი
+    const mrName = document.querySelector('#medicalRecordForm [name="patient_name"]');
+    const f100Name = document.querySelector('#form100Form [name="patient_name"]'); // აქ ID იყო ადრე, ახლა name-ით ვეძებთ
+
+    if (mrName && f100Name) {
+        f100Name.addEventListener('input', () => {
+            f100Name.dataset.manualEdited = 'true';
+        });
+
+        mrName.addEventListener('input', () => {
+            const val = mrName.value;
+            if (!f100Name.value || (f100Name.dataset.autoFilled === 'true' && f100Name.dataset.manualEdited !== 'true')) {
+                f100Name.value = val;
+                f100Name.dataset.autoFilled = 'true';
+            }
+        });
+    }
 }
 
 // ===== Signatures (ატვირთვა / გასუფთავება) =====
