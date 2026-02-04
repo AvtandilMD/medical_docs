@@ -125,10 +125,10 @@ function initDateTimePickers() {
     });
 }
 
-// ===== Medical Record -> Form 100 Auto Sync =====
+// ===== Auto Sync (MR -> Form 100) =====
 function initCardNumberSync() {
 
-    // დამხმარე ფუნქცია ველების დასაკავშირებლად
+    // დამხმარე ფუნქცია ველების სინქრონიზაციისთვის
     function syncFields(mrSelector, f100Selector) {
         const mrField = document.querySelector(mrSelector);
         const f100Field = document.querySelector(f100Selector);
@@ -138,37 +138,45 @@ function initCardNumberSync() {
             f100Field.addEventListener('input', () => {
                 f100Field.dataset.manualEdited = 'true';
             });
+            // Flatpickr-ის შემთხვევაში change ივენთი უფრო საიმედოა
+            f100Field.addEventListener('change', () => {
+                f100Field.dataset.manualEdited = 'true';
+            });
 
-            // MR-ში ჩაწერისას გადავიდეს F100-ში
-            mrField.addEventListener('input', () => {
+            const updateHandler = () => {
                 if (!f100Field.value || (f100Field.dataset.autoFilled === 'true' && f100Field.dataset.manualEdited !== 'true')) {
-                    f100Field.value = mrField.value;
+                    // თუ ეს flatpickr ველია, გამოვიყენოთ მისი API
+                    if (f100Field._flatpickr) {
+                        f100Field._flatpickr.setDate(mrField.value);
+                    } else {
+                        f100Field.value = mrField.value;
+                    }
                     f100Field.dataset.autoFilled = 'true';
                 }
-            });
+            };
+
+            // ვუსმენთ input-საც და change-საც (რადგან flatpickr change-ს ისვრის)
+            mrField.addEventListener('input', updateHandler);
+            mrField.addEventListener('change', updateHandler);
         }
     }
 
-    // 1. ბარათის ნომერი -> რეგისტრაციის №
+    // 1. იდენტიფიკაცია
     syncFields('#medicalRecordForm [name="card_number"]', '#form100Form [name="registration_number"]');
-
-    // 2. სახელი, გვარი -> სახელი, გვარი
     syncFields('#medicalRecordForm [name="patient_name"]', '#form100Form [name="patient_name"]');
 
-    // 3. ვიტალები (MR ობიექტური სტატუსი -> F100 მიღებისას)
-    // T (ტემპერატურა)
+    // 2. თარიღები
+    // პირველადი შეფასება (MR) -> მიღების თარიღი (F100)
+    syncFields('#mr_initial_date', '#form100Form [name="hospitalization_date"]');
+
+    // გაწერა (MR) -> გაწერის თარიღი (F100)
+    syncFields('#mr_discharge_note_date', '#form100Form [name="discharge_date"]');
+
+    // 3. ვიტალები
     syncFields('#medicalRecordForm [name="temperature"]', '#form100Form [name="admission_temp"]');
-
-    // BP (წნევა)
     syncFields('#medicalRecordForm [name="blood_pressure"]', '#form100Form [name="admission_bp"]');
-
-    // HR (პულსი)
     syncFields('#medicalRecordForm [name="heart_rate"]', '#form100Form [name="admission_hr"]');
-
-    // RR (სუნთქვა)
     syncFields('#medicalRecordForm [name="respiratory_rate"]', '#form100Form [name="admission_rr"]');
-
-    // SpO2
     syncFields('#medicalRecordForm [name="spo2"]', '#form100Form [name="admission_spo2"]');
 }
 
