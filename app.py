@@ -58,23 +58,6 @@ def set_cell_shading(cell, color):
     cell._tc.get_or_add_tcPr().append(shading)
 
 
-def add_footer_text(doc, text="ფორმა 100", font_size=9):
-    """
-    ტექსტის დამატება გვერდის ბოლოში (Footer).
-    გამოჩნდება ყველა გვერდზე (სექციაზე).
-    """
-    for section in doc.sections:
-        footer = section.footer
-        p = footer.paragraphs[0] if footer.paragraphs else footer.add_paragraph()
-        p.text = ""
-        p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-
-        run = p.add_run(text)
-        run.font.name = 'Sylfaen'
-        run.font.size = Pt(font_size)
-        # თუ გინდა გამუქდეს:
-        # run.bold = True
-
 
 def decode_base64_image(base64_string):
     """Base64 სურათის დეკოდირება და BytesIO დაბრუნება"""
@@ -357,17 +340,10 @@ def _build_form_100_structure(data, font_size_pt):
 
 
 def create_form_100_document_save(data):
-    """შენახვისთვის: შრიფტი 11"""
-    doc = _build_form_100_structure(data, font_size_pt=11)
-    add_footer_text(doc, "ფორმა 100", font_size=9)  # <-- დამატებულია Footer
-    return doc
-
+    return _build_form_100_structure(data, font_size_pt=11)
 
 def create_form_100_document_print(data):
-    """ბეჭდვისთვის: შრიფტი 10"""
-    doc = _build_form_100_structure(data, font_size_pt=10)
-    add_footer_text(doc, "ფორმა 100", font_size=9)  # <-- დამატებულია Footer
-    return doc
+    return _build_form_100_structure(data, font_size_pt=10)
 
 
 def create_medical_record_document(data):
