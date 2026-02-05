@@ -362,6 +362,7 @@ def create_medical_record_document(data):
     style.font.name = 'Sylfaen'
     style.font.size = Pt(11)
 
+    # სათაური
     h1 = doc.add_paragraph()
     h1.alignment = WD_ALIGN_PARAGRAPH.CENTER
     h1.add_run(data.get('facility_name', 'პრემიუმ მედ გრუპი')).bold = True
@@ -371,6 +372,7 @@ def create_medical_record_document(data):
     h2.add_run(data.get('department', 'გადაუდებელი მედიცინა'))
     doc.add_paragraph()
 
+    # პაციენტი
     t1 = doc.add_table(rows=4, cols=2)
     t1.style = 'Table Grid'
     t1.rows[0].cells[0].merge(t1.rows[0].cells[1])
@@ -384,6 +386,7 @@ def create_medical_record_document(data):
     t1.rows[3].cells[1].text = data.get('admission_status', 'თვითდინებით')
     doc.add_paragraph()
 
+    # დიაგნოზი
     t2 = doc.add_table(rows=2, cols=2)
     t2.style = 'Table Grid'
     t2.rows[0].cells[0].merge(t2.rows[0].cells[1])
@@ -393,6 +396,7 @@ def create_medical_record_document(data):
     t2.rows[1].cells[1].text = data.get('diagnosis_description', '')
     doc.add_paragraph()
 
+    # ჩივილები
     t3 = doc.add_table(rows=2, cols=1)
     t3.style = 'Table Grid'
     t3.rows[0].cells[0].text = "ჩივილები"
@@ -400,6 +404,7 @@ def create_medical_record_document(data):
     t3.rows[1].cells[0].text = data.get('complaints', '')
     doc.add_paragraph()
 
+    # ანამნეზი
     t4 = doc.add_table(rows=2, cols=1)
     t4.style = 'Table Grid'
     t4.rows[0].cells[0].text = "ანამნეზი"
@@ -413,6 +418,7 @@ def create_medical_record_document(data):
     al.add_run(data.get('allergies', 'არა'))
     doc.add_paragraph()
 
+    # ობიექტური სტატუსი
     h_obj = doc.add_paragraph()
     h_obj.alignment = WD_ALIGN_PARAGRAPH.CENTER
     r_obj = h_obj.add_run("ობიექტური სტატუსი")
@@ -456,18 +462,32 @@ def create_medical_record_document(data):
         set_cell_shading(sys_t.rows[i].cells[0], "F2F2F2")
     doc.add_paragraph()
 
+    # წინასწარი დიაგნოზი
     p_pd = doc.add_paragraph()
     r_pd = p_pd.add_run("წინასწარი დიაგნოზი: ")
     r_pd.font.bold = True
     p_pd.add_run(data.get('preliminary_diagnosis', ''))
 
+    # [1] ექიმის ხელმოწერა (დიაგნოზთან)
     p_doc = doc.add_paragraph()
     r_doc = p_doc.add_run("მკურნალი ექიმი: ")
     r_doc.font.bold = True
     p_doc.add_run(data.get('doctor', ''))
 
+    # ხელმოწერის სურათი
+    doctor_sig_data = data.get('doctor_signature_image', '')
+    if doctor_sig_data:
+        img_stream = decode_base64_image(doctor_sig_data)
+        if img_stream:
+            try:
+                run = p_doc.add_run()
+                run.add_picture(img_stream, width=Inches(0.8))  # მცირე ზომა ტექსტის გასწვრივ
+            except:
+                pass
+
     doc.add_page_break()
 
+    # მიმდინარეობის ფურცელი
     h_prog = doc.add_paragraph()
     h_prog.alignment = WD_ALIGN_PARAGRAPH.CENTER
     r_prog = h_prog.add_run("პაციენტის მიმდინარეობის ფურცელი (დღიური)")
@@ -475,6 +495,7 @@ def create_medical_record_document(data):
     r_prog.font.size = Pt(14)
     doc.add_paragraph()
 
+    # Initial
     t_init = doc.add_table(rows=2, cols=1)
     t_init.style = 'Table Grid'
     head_init = "პირველადი შეფასება / მიღება"
@@ -491,6 +512,7 @@ def create_medical_record_document(data):
     p_id.add_run(data.get('initial_diagnosis', ''))
     doc.add_paragraph()
 
+    # დანიშნულებები
     p_ord = doc.add_paragraph()
     r_ord = p_ord.add_run("დანიშნულებები:")
     r_ord.font.bold = True
@@ -514,26 +536,24 @@ def create_medical_record_document(data):
                 b.add_run(line.strip())
     doc.add_paragraph()
 
+    # [2] ექიმის ხელმოწერა (დანიშნულებებთან)
     _p_sig1 = doc.add_paragraph()
     _p_sig1.alignment = WD_ALIGN_PARAGRAPH.RIGHT
     _p_sig1.add_run(f"ექიმი: {data.get('doctor_signature', '')}")
 
-    # MR Doctor Signature Image
-    mr_doctor_sig = data.get('doctor_signature_image', '')
-    if mr_doctor_sig:
-        img_stream = decode_base64_image(mr_doctor_sig)
+    if doctor_sig_data:
+        img_stream = decode_base64_image(doctor_sig_data)
         if img_stream:
             try:
-                sig_para = doc.add_paragraph()
-                sig_para.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-                run = sig_para.add_run()
-                run.add_picture(img_stream, width=Inches(1.0))
+                run = _p_sig1.add_run()
+                run.add_picture(img_stream, width=Inches(0.8))
             except:
                 pass
 
     doc.add_paragraph()
     doc.add_paragraph()
 
+    # გაწერა
     t_dis = doc.add_table(rows=2, cols=1)
     t_dis.style = 'Table Grid'
     head_dis = "გადაფასება / გაწერა"
@@ -544,9 +564,19 @@ def create_medical_record_document(data):
     t_dis.rows[1].cells[0].text = data.get('discharge_narrative', '')
     doc.add_paragraph()
 
+    # [3] ექიმის ხელმოწერა (გაწერასთან)
     _p_sig2 = doc.add_paragraph()
     _p_sig2.alignment = WD_ALIGN_PARAGRAPH.RIGHT
     _p_sig2.add_run(f"ექიმი: {data.get('discharge_doctor', '')}")
+
+    if doctor_sig_data:
+        img_stream = decode_base64_image(doctor_sig_data)
+        if img_stream:
+            try:
+                run = _p_sig2.add_run()
+                run.add_picture(img_stream, width=Inches(0.8))
+            except:
+                pass
 
     return doc
 
