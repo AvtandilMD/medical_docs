@@ -58,6 +58,24 @@ def set_cell_shading(cell, color):
     cell._tc.get_or_add_tcPr().append(shading)
 
 
+def add_footer_text(doc, text="ფორმა 100", font_size=9):
+    """
+    ტექსტის დამატება გვერდის ბოლოში (Footer).
+    გამოჩნდება ყველა გვერდზე (სექციაზე).
+    """
+    for section in doc.sections:
+        footer = section.footer
+        p = footer.paragraphs[0] if footer.paragraphs else footer.add_paragraph()
+        p.text = ""
+        p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+
+        run = p.add_run(text)
+        run.font.name = 'Sylfaen'
+        run.font.size = Pt(font_size)
+        # თუ გინდა გამუქდეს:
+        # run.bold = True
+
+
 def decode_base64_image(base64_string):
     """Base64 სურათის დეკოდირება და BytesIO დაბრუნება"""
     if not base64_string or not isinstance(base64_string, str):
@@ -280,8 +298,7 @@ def _build_form_100_structure(data, font_size_pt):
     t10.style = 'Table Grid'
     t10.rows[0].cells[0].text = "14. ჩატარებული მკურნალობა"
     set_cell_shading(t10.rows[0].cells[0], "D9E2F3")
-    t10.rows[1].cells[
-        0].text = f"მედიკამენტები:\n{data.get('medications', '')}\n\nკოდი: {data.get('treatment_code', '')}"
+    t10.rows[1].cells[0].text = f"მედიკამენტები:\n{data.get('medications', '')}\n\nკოდი: {data.get('treatment_code', '')}"
     doc.add_paragraph()
 
     # 15-17. Outcome
@@ -341,12 +358,16 @@ def _build_form_100_structure(data, font_size_pt):
 
 def create_form_100_document_save(data):
     """შენახვისთვის: შრიფტი 11"""
-    return _build_form_100_structure(data, font_size_pt=11)
+    doc = _build_form_100_structure(data, font_size_pt=11)
+    add_footer_text(doc, "ფორმა 100", font_size=9)  # <-- დამატებულია Footer
+    return doc
 
 
 def create_form_100_document_print(data):
     """ბეჭდვისთვის: შრიფტი 10"""
-    return _build_form_100_structure(data, font_size_pt=10)
+    doc = _build_form_100_structure(data, font_size_pt=10)
+    add_footer_text(doc, "ფორმა 100", font_size=9)  # <-- დამატებულია Footer
+    return doc
 
 
 def create_medical_record_document(data):
@@ -666,8 +687,11 @@ def print_document():
         clean_name = "".join(c for c in patient_name if c in safe_chars)
         clean_name = clean_name.replace(' ', '_')  # სპეისის შეცვლა ტირეთი
 
-        # 4. საბოლოო სახელი: სახელი_გვარი_თარიღი
-        filename = f"{clean_name}_{date_str}"
+        # 4. საბოლოო სახელი: სახელი_გვარი + თარიღი + ფორმა_100
+        if doc_type == 'form_100':
+            filename = f"{clean_name}_{date_str}_ფორმა_100"
+        else:
+            filename = f"{clean_name}_{date_str}"
 
         # -------------------------------------------
 
